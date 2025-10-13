@@ -7,8 +7,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -56,7 +57,7 @@ typedef struct editor_state {
   int screen_cols;
   int num_rows;
   editor_row_t *row;
-  int dirty;
+  bool dirty;
   char *filename;
   char status_msg[80];
   time_t status_msg_time;
@@ -234,7 +235,7 @@ void editor_insert_row(int at, char *s, size_t len) {
   editor_update_row(&editor_state.row[at]);
 
   editor_state.num_rows++;
-  editor_state.dirty++;
+  editor_state.dirty = true;
 }
 
 void editor_free_row(editor_row_t *row) {
@@ -247,7 +248,7 @@ void editor_del_row(int at) {
   editor_free_row(&editor_state.row[at]);
   memmove(&editor_state.row[at], &editor_state.row[at + 1], sizeof(editor_row_t) * (editor_state.num_rows - at - 1));
   editor_state.num_rows--;
-  editor_state.dirty++;
+  editor_state.dirty = true;
 }
 
 void editor_row_insert_char(editor_row_t *row, int at, int c) {
@@ -257,7 +258,7 @@ void editor_row_insert_char(editor_row_t *row, int at, int c) {
   row->size++;
   row->chars[at] = c;
   editor_update_row(row);
-  editor_state.dirty++;
+  editor_state.dirty = true;
 }
 
 void editor_row_append_string(editor_row_t *row, char *s, size_t len) {
@@ -266,7 +267,7 @@ void editor_row_append_string(editor_row_t *row, char *s, size_t len) {
   row->size += len;
   row->chars[row->size] = '\0';
   editor_update_row(row);
-  editor_state.dirty++;
+  editor_state.dirty = true;
 }
 
 void editor_row_del_char(editor_row_t *row, int at) {
@@ -274,7 +275,7 @@ void editor_row_del_char(editor_row_t *row, int at) {
   memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
   row->size--;
   editor_update_row(row);
-  editor_state.dirty++;
+  editor_state.dirty = true;
 }
 
 /*** editor operations ***/
@@ -357,7 +358,7 @@ void editor_open(char *filename) {
   }
   free(line);
   fclose(fp);
-  editor_state.dirty = 0;
+  editor_state.dirty = false;
 }
 
 void editor_save() {
@@ -378,7 +379,7 @@ void editor_save() {
       if (write(fd, buf, len) == len) {
         close(fd);
         free(buf);
-        editor_state.dirty = 0;
+        editor_state.dirty = false;
         editor_set_status_message("%d bytes written to disk", len);
         return;
       }
@@ -537,7 +538,7 @@ char *editor_prompt(char *prompt) {
   size_t buflen = 0;
   buf[0] = '\0';
 
-  while (1) {
+  while (true) {
     editor_set_status_message(prompt, buf);
     editor_refresh_screen();
 
@@ -690,7 +691,7 @@ void init_editor() {
   editor_state.col_offset = 0;
   editor_state.num_rows = 0;
   editor_state.row = NULL;
-  editor_state.dirty = 0;
+  editor_state.dirty = false;
   editor_state.filename = NULL;
   editor_state.status_msg[0] = '\0';
   editor_state.status_msg_time = 0;
@@ -708,7 +709,7 @@ int main(int argc, char *argv[]) {
 
   editor_set_status_message("HELP: Ctrl-S = save | Ctrl-Q = quit");
 
-  while (1) {
+  while (true) {
     editor_refresh_screen();
     editor_process_keypress();
   }
