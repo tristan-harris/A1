@@ -21,7 +21,7 @@
 /*** defines ***/
 
 #define A1_VERSION "0.0.1"
-#define A1_TAB_STOP 8
+#define A1_TAB_STOP 4
 #define A1_QUIT_TIMES 3
 
 #define CTRL_KEY(k) ((k) & 0x1f)
