@@ -1,5 +1,6 @@
 /*** includes ***/
 
+// https://man7.org/linux/man-pages/man7/feature_test_macros.7.html
 #define _DEFAULT_SOURCE
 #define _BSD_SOURCE
 #define _GNU_SOURCE
@@ -24,10 +25,14 @@
 #define A1_TAB_STOP 4
 #define A1_QUIT_TIMES 3
 
+// strips every bit beyond fifth
+// e.g. q (113) and Q (81) become C-Q/DC1 (17)
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 enum editor_key_t {
   BACKSPACE = 127,
+
+  // soft codes, not related to ASCII values
   ARROW_LEFT = 1000,
   ARROW_RIGHT,
   ARROW_UP,
@@ -42,22 +47,22 @@ enum editor_key_t {
 /*** data ***/
 
 typedef struct editor_row {
-  int size;
-  int rsize;
-  char *chars;
-  char *render;
+  int size; // size of row (excluding null character)
+  int r_size; // size of rendered row
+  char *chars; // row content
+  char *render; // row content rendered to screen (needed for TABs)
 } editor_row_t;
 
 typedef struct editor_state {
-  int cx, cy;
-  int rx;
+  int cursor_x, cursor_y; // cursor position
+  int render_x;
   int row_offset;
   int col_offset;
   int screen_rows;
   int screen_cols;
   int num_rows;
-  editor_row_t *row;
-  bool dirty;
+  editor_row_t *row; // rows
+  bool dirty; // whether file has been modified since last write
   char *filename;
   char status_msg[80];
   time_t status_msg_time;
@@ -75,20 +80,23 @@ char *editor_prompt(char *prompt);
 /*** terminal ***/
 
 void die(const char *s) {
-  write(STDOUT_FILENO, "\x1b[2J", 4);
-  write(STDOUT_FILENO, "\x1b[H", 3);
+  write(STDOUT_FILENO, "\x1b[2J", 4); // clear entire screen
+  write(STDOUT_FILENO, "\x1b[H", 3); // move cursor (default of top-left)
 
   perror(s);
   exit(1);
 }
 
 void disable_raw_mode() {
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor_state.orig_termios) == -1)
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor_state.orig_termios) == -1) {
     die("tcsetattr");
+  }
 }
 
 void enable_raw_mode() {
-  if (tcgetattr(STDIN_FILENO, &editor_state.orig_termios) == -1) die("tcgetattr");
+  if (tcgetattr(STDIN_FILENO, &editor_state.orig_termios) == -1) {
+    die("tcgetattr");
+  }
   atexit(disable_raw_mode);
 
   struct termios raw = editor_state.orig_termios;
@@ -99,14 +107,18 @@ void enable_raw_mode() {
   raw.c_cc[VMIN] = 0;
   raw.c_cc[VTIME] = 1;
 
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) {
+    die("tcsetattr");
+  }
 }
 
 int editor_read_key() {
-  int nread;
+  int bytes_read;
   char c;
-  while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
-    if (nread == -1 && errno != EAGAIN) die("read");
+  while ((bytes_read = read(STDIN_FILENO, &c, 1)) != 1) {
+    if (bytes_read == -1 && errno != EAGAIN) {
+      die("read");
+    }
   }
 
   if (c == '\x1b') {
@@ -156,17 +168,20 @@ int get_cursor_position(int *rows, int *cols) {
   char buf[32];
   unsigned int i = 0;
 
-  if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) return -1;
+  // report cursor position
+  if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) { return -1; }
 
+  // read response
   while (i < sizeof(buf) - 1) {
-    if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
-    if (buf[i] == 'R') break;
+    if (read(STDIN_FILENO, &buf[i], 1) != 1) { break; }
+    if (buf[i] == 'R') { break; }
     i++;
   }
   buf[i] = '\0';
 
-  if (buf[0] != '\x1b' || buf[1] != '[') return -1;
-  if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) return -1;
+  // parse response
+  if (buf[0] != '\x1b' || buf[1] != '[') { return -1; }
+  if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) { return -1; }
 
   return 0;
 }
@@ -175,7 +190,12 @@ int get_window_size(int *rows, int *cols) {
   struct winsize ws;
 
   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-    if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
+    // if ioctl() fails, attempt querying terminal itself
+
+    // go to right-most and bottom-most position
+    if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) {
+      return -1;
+    }
     return get_cursor_position(rows, cols);
   } else {
     *cols = ws.ws_col;
@@ -188,8 +208,7 @@ int get_window_size(int *rows, int *cols) {
 
 int editor_row_cx_to_rx(editor_row_t *row, int cx) {
   int rx = 0;
-  int j;
-  for (j = 0; j < cx; j++) {
+  for (int j = 0; j < cx; j++) {
     if (row->chars[j] == '\t')
       rx += (A1_TAB_STOP - 1) - (rx % A1_TAB_STOP);
     rx++;
@@ -199,28 +218,28 @@ int editor_row_cx_to_rx(editor_row_t *row, int cx) {
 
 void editor_update_row(editor_row_t *row) {
   int tabs = 0;
-  int j;
-  for (j = 0; j < row->size; j++)
-    if (row->chars[j] == '\t') tabs++;
+  for (int j = 0; j < row->size; j++) {
+    if (row->chars[j] == '\t') { tabs++; }
+  }
 
   free(row->render);
   row->render = malloc(row->size + tabs*(A1_TAB_STOP - 1) + 1);
 
   int idx = 0;
-  for (j = 0; j < row->size; j++) {
+  for (int j = 0; j < row->size; j++) {
     if (row->chars[j] == '\t') {
       row->render[idx++] = ' ';
-      while (idx % A1_TAB_STOP != 0) row->render[idx++] = ' ';
+      while (idx % A1_TAB_STOP != 0) { row->render[idx++] = ' '; }
     } else {
       row->render[idx++] = row->chars[j];
     }
   }
   row->render[idx] = '\0';
-  row->rsize = idx;
+  row->r_size = idx;
 }
 
 void editor_insert_row(int at, char *s, size_t len) {
-  if (at < 0 || at > editor_state.num_rows) return;
+  if (at < 0 || at > editor_state.num_rows) { return; }
 
   editor_state.row = realloc(editor_state.row, sizeof(editor_row_t) * (editor_state.num_rows + 1));
   memmove(&editor_state.row[at + 1], &editor_state.row[at], sizeof(editor_row_t) * (editor_state.num_rows - at));
@@ -230,7 +249,7 @@ void editor_insert_row(int at, char *s, size_t len) {
   memcpy(editor_state.row[at].chars, s, len);
   editor_state.row[at].chars[len] = '\0';
 
-  editor_state.row[at].rsize = 0;
+  editor_state.row[at].r_size = 0;
   editor_state.row[at].render = NULL;
   editor_update_row(&editor_state.row[at]);
 
@@ -244,7 +263,7 @@ void editor_free_row(editor_row_t *row) {
 }
 
 void editor_del_row(int at) {
-  if (at < 0 || at >= editor_state.num_rows) return;
+  if (at < 0 || at >= editor_state.num_rows) { return; }
   editor_free_row(&editor_state.row[at]);
   memmove(&editor_state.row[at], &editor_state.row[at + 1], sizeof(editor_row_t) * (editor_state.num_rows - at - 1));
   editor_state.num_rows--;
@@ -252,7 +271,7 @@ void editor_del_row(int at) {
 }
 
 void editor_row_insert_char(editor_row_t *row, int at, int c) {
-  if (at < 0 || at > row->size) at = row->size;
+  if (at < 0 || at > row->size) { at = row->size; }
   row->chars = realloc(row->chars, row->size + 2);
   memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
   row->size++;
@@ -271,7 +290,7 @@ void editor_row_append_string(editor_row_t *row, char *s, size_t len) {
 }
 
 void editor_row_del_char(editor_row_t *row, int at) {
-  if (at < 0 || at >= row->size) return;
+  if (at < 0 || at >= row->size) { return; }
   memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
   row->size--;
   editor_update_row(row);
@@ -281,41 +300,41 @@ void editor_row_del_char(editor_row_t *row, int at) {
 /*** editor operations ***/
 
 void editor_insert_char(int c) {
-  if (editor_state.cy == editor_state.num_rows) {
+  if (editor_state.cursor_y == editor_state.num_rows) {
     editor_insert_row(editor_state.num_rows, "", 0);
   }
-  editor_row_insert_char(&editor_state.row[editor_state.cy], editor_state.cx, c);
-  editor_state.cx++;
+  editor_row_insert_char(&editor_state.row[editor_state.cursor_y], editor_state.cursor_x, c);
+  editor_state.cursor_x++;
 }
 
 void editor_insert_newline() {
-  if (editor_state.cx == 0) {
-    editor_insert_row(editor_state.cy, "", 0);
+  if (editor_state.cursor_x == 0) {
+    editor_insert_row(editor_state.cursor_y, "", 0);
   } else {
-    editor_row_t *row = &editor_state.row[editor_state.cy];
-    editor_insert_row(editor_state.cy + 1, &row->chars[editor_state.cx], row->size - editor_state.cx);
-    row = &editor_state.row[editor_state.cy];
-    row->size = editor_state.cx;
+    editor_row_t *row = &editor_state.row[editor_state.cursor_y];
+    editor_insert_row(editor_state.cursor_y + 1, &row->chars[editor_state.cursor_x], row->size - editor_state.cursor_x);
+    row = &editor_state.row[editor_state.cursor_y];
+    row->size = editor_state.cursor_x;
     row->chars[row->size] = '\0';
     editor_update_row(row);
   }
-  editor_state.cy++;
-  editor_state.cx = 0;
+  editor_state.cursor_y++;
+  editor_state.cursor_x = 0;
 }
 
 void editor_del_char() {
-  if (editor_state.cy == editor_state.num_rows) return;
-  if (editor_state.cx == 0 && editor_state.cy == 0) return;
+  if (editor_state.cursor_y == editor_state.num_rows) { return; }
+  if (editor_state.cursor_x == 0 && editor_state.cursor_y == 0) { return; }
 
-  editor_row_t *row = &editor_state.row[editor_state.cy];
-  if (editor_state.cx > 0) {
-    editor_row_del_char(row, editor_state.cx - 1);
-    editor_state.cx--;
+  editor_row_t *row = &editor_state.row[editor_state.cursor_y];
+  if (editor_state.cursor_x > 0) {
+    editor_row_del_char(row, editor_state.cursor_x - 1);
+    editor_state.cursor_x--;
   } else {
-    editor_state.cx = editor_state.row[editor_state.cy - 1].size;
-    editor_row_append_string(&editor_state.row[editor_state.cy - 1], row->chars, row->size);
-    editor_del_row(editor_state.cy);
-    editor_state.cy--;
+    editor_state.cursor_x = editor_state.row[editor_state.cursor_y - 1].size;
+    editor_row_append_string(&editor_state.row[editor_state.cursor_y - 1], row->chars, row->size);
+    editor_del_row(editor_state.cursor_y);
+    editor_state.cursor_y--;
   }
 }
 
@@ -323,14 +342,14 @@ void editor_del_char() {
 
 char *editor_rows_to_string(int *buflen) {
   int totlen = 0;
-  int j;
-  for (j = 0; j < editor_state.num_rows; j++)
+  for (int j = 0; j < editor_state.num_rows; j++) {
     totlen += editor_state.row[j].size + 1;
+  }
   *buflen = totlen;
 
   char *buf = malloc(totlen);
   char *p = buf;
-  for (j = 0; j < editor_state.num_rows; j++) {
+  for (int j = 0; j < editor_state.num_rows; j++) {
     memcpy(p, editor_state.row[j].chars, editor_state.row[j].size);
     p += editor_state.row[j].size;
     *p = '\n';
@@ -345,15 +364,15 @@ void editor_open(char *filename) {
   editor_state.filename = strdup(filename);
 
   FILE *fp = fopen(filename, "r");
-  if (!fp) die("fopen");
+  if (!fp) { die("fopen"); }
 
   char *line = NULL;
   size_t linecap = 0;
   ssize_t linelen;
   while ((linelen = getline(&line, &linecap, fp)) != -1) {
-    while (linelen > 0 && (line[linelen - 1] == '\n' ||
-                           line[linelen - 1] == '\r'))
+    while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) {
       linelen--;
+    }
     editor_insert_row(editor_state.num_rows, line, linelen);
   }
   free(line);
@@ -403,7 +422,7 @@ struct append_buffer {
 void ab_append(struct append_buffer *ab, const char *s, int len) {
   char *new = realloc(ab->b, ab->len + len);
 
-  if (new == NULL) return;
+  if (new == NULL) { return; }
   memcpy(&new[ab->len], s, len);
   ab->b = new;
   ab->len += len;
@@ -416,67 +435,69 @@ void ab_free(struct append_buffer *ab) {
 /*** output ***/
 
 void editor_scroll() {
-  editor_state.rx = 0;
-  if (editor_state.cy < editor_state.num_rows) {
-    editor_state.rx = editor_row_cx_to_rx(&editor_state.row[editor_state.cy], editor_state.cx);
+  editor_state.render_x = 0;
+  if (editor_state.cursor_y < editor_state.num_rows) {
+    editor_state.render_x = editor_row_cx_to_rx(&editor_state.row[editor_state.cursor_y], editor_state.cursor_x);
   }
 
-  if (editor_state.cy < editor_state.row_offset) {
-    editor_state.row_offset = editor_state.cy;
+  if (editor_state.cursor_y < editor_state.row_offset) {
+    editor_state.row_offset = editor_state.cursor_y;
   }
-  if (editor_state.cy >= editor_state.row_offset + editor_state.screen_rows) {
-    editor_state.row_offset = editor_state.cy - editor_state.screen_rows + 1;
+  if (editor_state.cursor_y >= editor_state.row_offset + editor_state.screen_rows) {
+    editor_state.row_offset = editor_state.cursor_y - editor_state.screen_rows + 1;
   }
-  if (editor_state.rx < editor_state.col_offset) {
-    editor_state.col_offset = editor_state.rx;
+  if (editor_state.render_x < editor_state.col_offset) {
+    editor_state.col_offset = editor_state.render_x;
   }
-  if (editor_state.rx >= editor_state.col_offset + editor_state.screen_cols) {
-    editor_state.col_offset = editor_state.rx - editor_state.screen_cols + 1;
+  if (editor_state.render_x >= editor_state.col_offset + editor_state.screen_cols) {
+    editor_state.col_offset = editor_state.render_x - editor_state.screen_cols + 1;
   }
 }
 
 void editor_draw_rows(struct append_buffer *ab) {
-  int y;
-  for (y = 0; y < editor_state.screen_rows; y++) {
+  for (int y = 0; y < editor_state.screen_rows; y++) {
     int filerow = y + editor_state.row_offset;
     if (filerow >= editor_state.num_rows) {
       if (editor_state.num_rows == 0 && y == editor_state.screen_rows / 3) {
         char welcome[80];
-        int welcomelen = snprintf(welcome, sizeof(welcome),
-          "A1 editor -- version %s", A1_VERSION);
+        int welcomelen = snprintf(welcome, sizeof(welcome), "A1 editor -- version %s", A1_VERSION);
         if (welcomelen > editor_state.screen_cols) welcomelen = editor_state.screen_cols;
         int padding = (editor_state.screen_cols - welcomelen) / 2;
         if (padding) {
           ab_append(ab, "~", 1);
           padding--;
         }
-        while (padding--) ab_append(ab, " ", 1);
+        while (padding--) { ab_append(ab, " ", 1); }
         ab_append(ab, welcome, welcomelen);
       } else {
         ab_append(ab, "~", 1);
       }
     } else {
-      int len = editor_state.row[filerow].rsize - editor_state.col_offset;
-      if (len < 0) len = 0;
-      if (len > editor_state.screen_cols) len = editor_state.screen_cols;
+      int len = editor_state.row[filerow].r_size - editor_state.col_offset;
+      if (len < 0) { len = 0; }
+      if (len > editor_state.screen_cols) { len = editor_state.screen_cols; }
       ab_append(ab, &editor_state.row[filerow].render[editor_state.col_offset], len);
     }
 
-    ab_append(ab, "\x1b[K", 3);
+    ab_append(ab, "\x1b[K", 3); // erase from active position to end of line
     ab_append(ab, "\r\n", 2);
   }
 }
 
 void editor_draw_status_bar(struct append_buffer *ab) {
-  ab_append(ab, "\x1b[7m", 4);
+  ab_append(ab, "\x1b[7m", 4); // invert colors
   char status[80], rstatus[80];
+
   int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
     editor_state.filename ? editor_state.filename : "[No Name]", editor_state.num_rows,
     editor_state.dirty ? "(modified)" : "");
+
   int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
-    editor_state.cy + 1, editor_state.num_rows);
-  if (len > editor_state.screen_cols) len = editor_state.screen_cols;
+    editor_state.cursor_y + 1, editor_state.num_rows);
+
+  if (len > editor_state.screen_cols) { len = editor_state.screen_cols; }
   ab_append(ab, status, len);
+
   while (len < editor_state.screen_cols) {
     if (editor_state.screen_cols - len == rlen) {
       ab_append(ab, rstatus, rlen);
@@ -486,16 +507,20 @@ void editor_draw_status_bar(struct append_buffer *ab) {
       len++;
     }
   }
-  ab_append(ab, "\x1b[m", 3);
+
+  ab_append(ab, "\x1b[m", 3); // reset formatting
   ab_append(ab, "\r\n", 2);
 }
 
 void editor_draw_message_bar(struct append_buffer *ab) {
-  ab_append(ab, "\x1b[K", 3);
+  ab_append(ab, "\x1b[K", 3); // erase from active position to end of line
   int msglen = strlen(editor_state.status_msg);
-  if (msglen > editor_state.screen_cols) msglen = editor_state.screen_cols;
-  if (msglen && time(NULL) - editor_state.status_msg_time < 5)
+  if (msglen > editor_state.screen_cols) {
+    msglen = editor_state.screen_cols;
+  }
+  if (msglen && time(NULL) - editor_state.status_msg_time < 5) {
     ab_append(ab, editor_state.status_msg, msglen);
+  }
 }
 
 void editor_refresh_screen() {
@@ -503,19 +528,19 @@ void editor_refresh_screen() {
 
   struct append_buffer ab = ABUF_INIT;
 
-  ab_append(&ab, "\x1b[?25l", 6);
-  ab_append(&ab, "\x1b[H", 3);
+  ab_append(&ab, "\x1b[?25l", 6); // hide cursor
+  ab_append(&ab, "\x1b[H", 3); // move cursor to top-left
 
   editor_draw_rows(&ab);
   editor_draw_status_bar(&ab);
   editor_draw_message_bar(&ab);
 
   char buf[32];
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (editor_state.cy - editor_state.row_offset) + 1,
-                                            (editor_state.rx - editor_state.col_offset) + 1);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (editor_state.cursor_y - editor_state.row_offset) + 1,
+                                            (editor_state.render_x - editor_state.col_offset) + 1);
   ab_append(&ab, buf, strlen(buf));
 
-  ab_append(&ab, "\x1b[?25h", 6);
+  ab_append(&ab, "\x1b[?25h", 6); // show cursor
 
   write(STDOUT_FILENO, ab.b, ab.len);
   ab_free(&ab);
@@ -566,41 +591,41 @@ char *editor_prompt(char *prompt) {
 }
 
 void editor_move_cursor(int key) {
-  editor_row_t *row = (editor_state.cy >= editor_state.num_rows) ? NULL : &editor_state.row[editor_state.cy];
+  editor_row_t *row = (editor_state.cursor_y >= editor_state.num_rows) ? NULL : &editor_state.row[editor_state.cursor_y];
 
   switch (key) {
     case ARROW_LEFT:
-      if (editor_state.cx != 0) {
-        editor_state.cx--;
-      } else if (editor_state.cy > 0) {
-        editor_state.cy--;
-        editor_state.cx = editor_state.row[editor_state.cy].size;
+      if (editor_state.cursor_x != 0) {
+        editor_state.cursor_x--;
+      } else if (editor_state.cursor_y > 0) {
+        editor_state.cursor_y--;
+        editor_state.cursor_x = editor_state.row[editor_state.cursor_y].size;
       }
       break;
     case ARROW_RIGHT:
-      if (row && editor_state.cx < row->size) {
-        editor_state.cx++;
-      } else if (row && editor_state.cx == row->size) {
-        editor_state.cy++;
-        editor_state.cx = 0;
+      if (row && editor_state.cursor_x < row->size) {
+        editor_state.cursor_x++;
+      } else if (row && editor_state.cursor_x == row->size) {
+        editor_state.cursor_y++;
+        editor_state.cursor_x = 0;
       }
       break;
     case ARROW_UP:
-      if (editor_state.cy != 0) {
-        editor_state.cy--;
+      if (editor_state.cursor_y != 0) {
+        editor_state.cursor_y--;
       }
       break;
     case ARROW_DOWN:
-      if (editor_state.cy < editor_state.num_rows) {
-        editor_state.cy++;
+      if (editor_state.cursor_y < editor_state.num_rows) {
+        editor_state.cursor_y++;
       }
       break;
   }
 
-  row = (editor_state.cy >= editor_state.num_rows) ? NULL : &editor_state.row[editor_state.cy];
+  row = (editor_state.cursor_y >= editor_state.num_rows) ? NULL : &editor_state.row[editor_state.cursor_y];
   int rowlen = row ? row->size : 0;
-  if (editor_state.cx > rowlen) {
-    editor_state.cx = rowlen;
+  if (editor_state.cursor_x > rowlen) {
+    editor_state.cursor_x = rowlen;
   }
 }
 
@@ -621,8 +646,8 @@ void editor_process_keypress() {
         quit_times--;
         return;
       }
-      write(STDOUT_FILENO, "\x1b[2J", 4);
-      write(STDOUT_FILENO, "\x1b[H", 3);
+      write(STDOUT_FILENO, "\x1b[2J", 4); // clear screen
+      write(STDOUT_FILENO, "\x1b[H", 3); // move cursor to top-left
       exit(0);
       break;
 
@@ -631,12 +656,12 @@ void editor_process_keypress() {
       break;
 
     case HOME_KEY:
-      editor_state.cx = 0;
+      editor_state.cursor_x = 0;
       break;
 
     case END_KEY:
-      if (editor_state.cy < editor_state.num_rows)
-        editor_state.cx = editor_state.row[editor_state.cy].size;
+      if (editor_state.cursor_y < editor_state.num_rows)
+        editor_state.cursor_x = editor_state.row[editor_state.cursor_y].size;
       break;
 
     case BACKSPACE:
@@ -650,10 +675,10 @@ void editor_process_keypress() {
     case PAGE_DOWN:
       {
         if (c == PAGE_UP) {
-          editor_state.cy = editor_state.row_offset;
+          editor_state.cursor_y = editor_state.row_offset;
         } else if (c == PAGE_DOWN) {
-          editor_state.cy = editor_state.row_offset + editor_state.screen_rows - 1;
-          if (editor_state.cy > editor_state.num_rows) editor_state.cy = editor_state.num_rows;
+          editor_state.cursor_y = editor_state.row_offset + editor_state.screen_rows - 1;
+          if (editor_state.cursor_y > editor_state.num_rows) editor_state.cursor_y = editor_state.num_rows;
         }
 
         int times = editor_state.screen_rows;
@@ -684,9 +709,9 @@ void editor_process_keypress() {
 /*** init ***/
 
 void init_editor() {
-  editor_state.cx = 0;
-  editor_state.cy = 0;
-  editor_state.rx = 0;
+  editor_state.cursor_x = 0;
+  editor_state.cursor_y = 0;
+  editor_state.render_x = 0;
   editor_state.row_offset = 0;
   editor_state.col_offset = 0;
   editor_state.num_rows = 0;
@@ -696,7 +721,9 @@ void init_editor() {
   editor_state.status_msg[0] = '\0';
   editor_state.status_msg_time = 0;
 
-  if (get_window_size(&editor_state.screen_rows, &editor_state.screen_cols) == -1) die("getWindowSize");
+  if (get_window_size(&editor_state.screen_rows, &editor_state.screen_cols) == -1) {
+    die("getWindowSize");
+  }
   editor_state.screen_rows -= 2;
 }
 
@@ -714,5 +741,5 @@ int main(int argc, char *argv[]) {
     editor_process_keypress();
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
