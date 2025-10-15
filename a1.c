@@ -55,12 +55,12 @@ typedef struct editor_row {
 
 typedef struct editor_state {
   int cursor_x, cursor_y; // cursor position
-  int render_x;
-  int row_offset;
-  int col_offset;
-  int screen_rows;
-  int screen_cols;
-  int num_rows;
+  int render_x; // rendered position of cursor
+  int row_offset; // offset of rows displayed (vertical scroll)
+  int col_offset; // offset of columns display (horizontal scroll)
+  int screen_rows; // number of rows available in the emulator window
+  int screen_cols; // number of columns available in the emulator window
+  int num_rows; // number of rows that make up the text buffer
   editor_row_t *row; // rows
   bool dirty; // whether file has been modified since last write
   char *filename;
