@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -23,7 +24,7 @@
 
 #define A1_VERSION "0.0.1"
 #define A1_TAB_STOP 4
-#define A1_QUIT_TIMES 3
+#define A1_QUIT_TIMES 1
 
 // strips every bit beyond fifth
 // e.g. q (113) and Q (81) become C-Q/DC1 (17)
@@ -201,6 +202,21 @@ int get_window_size(int *rows, int *cols) {
     *cols = ws.ws_col;
     *rows = ws.ws_row;
     return 0;
+  }
+}
+
+// based on Neovim, decided by scroll offset not cursor position
+void get_scroll_percentage(char *buf, size_t size) {
+  if (editor_state.row_offset == 0) {
+    strncpy(buf, "Top", size);
+  }
+  // -1 required for empty new line (~)
+  else if(editor_state.num_rows - editor_state.screen_rows == editor_state.row_offset - 1) {
+    strncpy(buf, "Bot", size);
+  }
+  else {
+    double percentage = ((double)(editor_state.row_offset - 1) / (editor_state.num_rows - editor_state.screen_rows)) * 100;
+    snprintf(buf, size, "%d%%", (int)percentage);
   }
 }
 
@@ -486,25 +502,27 @@ void editor_draw_rows(struct append_buffer *ab) {
 
 void editor_draw_status_bar(struct append_buffer *ab) {
   ab_append(ab, "\x1b[7m", 4); // invert colors
-  char status[80], rstatus[80];
+  char left_status[80], right_status[80];
 
-  int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
-    editor_state.filename ? editor_state.filename : "[No Name]", editor_state.num_rows,
-    editor_state.dirty ? "(modified)" : "");
+  int left_len = snprintf(left_status, sizeof(left_status), "%.20s %s",
+    editor_state.filename ? editor_state.filename : "[No Name]", editor_state.dirty ? "[+]" : "");
 
-  int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
-    editor_state.cursor_y + 1, editor_state.num_rows);
+  char scroll_percent[4]; // need to take null character (\0) into account
+  get_scroll_percentage(scroll_percent, sizeof(scroll_percent));
 
-  if (len > editor_state.screen_cols) { len = editor_state.screen_cols; }
-  ab_append(ab, status, len);
+  int right_len = snprintf(right_status, sizeof(right_status), "%d,%d %s",
+    editor_state.cursor_y + 1, editor_state.cursor_x + 1, scroll_percent);
 
-  while (len < editor_state.screen_cols) {
-    if (editor_state.screen_cols - len == rlen) {
-      ab_append(ab, rstatus, rlen);
+  if (left_len > editor_state.screen_cols) { left_len = editor_state.screen_cols; }
+  ab_append(ab, left_status, left_len);
+
+  while (left_len < editor_state.screen_cols) {
+    if (editor_state.screen_cols - left_len == right_len) {
+      ab_append(ab, right_status, right_len);
       break;
     } else {
       ab_append(ab, " ", 1);
-      len++;
+      left_len++;
     }
   }
 
