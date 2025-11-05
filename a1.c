@@ -84,7 +84,7 @@ typedef struct {
   int screen_cols; // number of columns available in the emulator window
   int num_rows; // number of rows that make up the text buffer
   EditorRow *rows;
-  EditorMode *mode; // normal, insert, command etc.
+  const EditorMode *mode; // normal, insert, command etc.
   EditorFindState find_state; // to store find mode variables
   bool dirty; // whether file has been modified since last write
   char *filename;
@@ -119,29 +119,28 @@ void find_mode_exit();
 
 /*** global vars ***/
 
-EditorMode normal_mode = {
+const EditorMode normal_mode = {
   .entry_fn = normal_mode_entry,
   .input_fn = normal_mode_input,
   .exit_fn = normal_mode_exit,
   .name = "NORMAL "
 };
 
-EditorMode insert_mode = {
+const EditorMode insert_mode = {
   .entry_fn = insert_mode_entry,
   .input_fn = insert_mode_input,
   .exit_fn = insert_mode_exit,
   .name = "INSERT "
 };
 
-EditorMode command_mode = {
+const EditorMode command_mode = {
   .entry_fn = command_mode_entry,
   .input_fn = command_mode_input,
   .exit_fn = command_mode_exit,
   .name = "COMMAND"
 };
 
-
-EditorMode find_mode = {
+const EditorMode find_mode = {
   .entry_fn = find_mode_entry,
   .input_fn = find_mode_input,
   .exit_fn = find_mode_exit,
@@ -883,7 +882,7 @@ void editor_process_keypress() {
 
 /*** modes ***/
 
-void transition_mode(EditorMode *new_mode, void *data) {
+void transition_mode(const EditorMode *new_mode, void *data) {
   if (editor_state.mode != NULL) { editor_state.mode->exit_fn(); }
   editor_state.mode = new_mode;
   if (editor_state.mode != NULL) { editor_state.mode->entry_fn(data); }
