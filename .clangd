@@ -1,0 +1,4 @@
+# https://clangd.llvm.org/config#ignoreheader
+Diagnostics:
+  Includes:
+    IgnoreHeader: "config.h"
