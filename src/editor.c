@@ -244,6 +244,20 @@ void editor_page_scroll(EditorDirection dir, bool half) {
     }
 }
 
+// returns index of first non whitespace character (i.e. not tab or space)
+// returns -1 if no character found
+int editor_jump_to_first_non_whitespace_char(EditorRow *row) {
+    int i = 0;
+    while (i < row->size) {
+        if (row->chars[i] != ' ' && row->chars[i] != '\t') {
+            editor_set_cursor_x(i);
+            return i;
+        }
+        i++;
+    }
+    return -1;
+}
+
 /*** file i/o ***/
 
 char *editor_rows_to_string(int *buflen) {

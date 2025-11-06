@@ -27,6 +27,7 @@ void editor_insert_char(int c);
 void editor_insert_newline(void);
 void editor_del_char(void);
 void editor_page_scroll(EditorDirection dir, bool half);
+int editor_jump_to_first_non_whitespace_char(EditorRow *row);
 
 /*** file i/o ***/
 

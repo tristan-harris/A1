@@ -84,6 +84,7 @@ void normal_mode_input(int input) {
         break;
 
     case '^':
+        editor_jump_to_first_non_whitespace_char(row);
         break;
 
     case '$':
