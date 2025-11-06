@@ -276,7 +276,7 @@ void editor_open(const char *filename) {
 
     char *line = NULL;
     size_t line_cap = 0;
-    ssize_t line_len;
+    ssize_t line_len; // ssize_t = signed size type
     while ((line_len = getline(&line, &line_cap, fp)) != -1) {
         // strip line-ending characters
         while (line_len > 0 &&
@@ -420,12 +420,16 @@ void editor_draw_rows(AppendBuffer *ab) {
                               &editor_state.rows[filerow]
                                    .render[editor_state.col_offset],
                               editor_state.render_x - editor_state.col_offset);
+
                     ab_append(ab, "\x1b[7m", 4); // invert colors
+
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.render_x],
                               1);
+
                     ab_append(ab, "\x1b[m", 3); // reset formatting
+
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.render_x + 1],
