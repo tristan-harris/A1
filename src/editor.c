@@ -596,7 +596,8 @@ char *editor_prompt(const char *prompt) {
 
 void editor_set_cursor_x(int x) {
     editor_state.cursor_x = x;
-    editor_state.target_x = x;
+    editor_state.target_x = editor_row_cx_to_rx(
+        &editor_state.rows[editor_state.cursor_y], editor_state.cursor_x);
 }
 
 void editor_set_cursor_y(int y) {
@@ -605,7 +606,7 @@ void editor_set_cursor_y(int y) {
     if (editor_state.target_x > row->size - 1) {
         editor_state.cursor_x = MAX(row->size - 1, 0);
     } else {
-        editor_state.cursor_x = editor_state.target_x;
+        editor_state.cursor_x = editor_row_rx_to_cx(row, editor_state.target_x);
     }
 }
 
