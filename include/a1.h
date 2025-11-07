@@ -7,7 +7,6 @@
 #include <termios.h>
 #include <time.h>
 
-#define A1_VERSION "0.0.1"
 #define A1_TAB_STOP 4
 
 // strips every bit beyond fifth

@@ -49,6 +49,8 @@ void editor_draw_message_bar(AppendBuffer *ab);
 
 void editor_refresh_screen(void);
 
+void editor_draw_welcome_text(void);
+
 void editor_set_status_message(const char *fmt, ...);
 
 /*** input ***/

@@ -5,6 +5,7 @@
 #include "../include/a1.h"
 #include "../include/structures.h"
 #include "../include/terminal.h"
+#include "../include/welcome_logo.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -392,26 +393,7 @@ void editor_draw_rows(AppendBuffer *ab) {
 
         // if past text buffer, fill lines below with '~'
         if (filerow >= editor_state.num_rows) {
-            if (editor_state.num_rows == 0 &&
-                y == editor_state.screen_rows / 3) {
-                char welcome[80];
-                int welcomelen =
-                    snprintf(welcome, sizeof(welcome),
-                             "A1 editor -- version %s", A1_VERSION);
-                if (welcomelen > editor_state.screen_cols)
-                    welcomelen = editor_state.screen_cols;
-                int padding = (editor_state.screen_cols - welcomelen) / 2;
-                if (padding) {
-                    ab_append(ab, "~", 1);
-                    padding--;
-                }
-                while (padding--) {
-                    ab_append(ab, " ", 1);
-                }
-                ab_append(ab, welcome, welcomelen);
-            } else {
-                ab_append(ab, "~", 1);
-            }
+            ab_append(ab, "~", 1);
         } else {
             int len = editor_state.rows[filerow].render_size -
                       editor_state.col_offset;
@@ -545,6 +527,44 @@ void editor_refresh_screen(void) {
 
     write(STDOUT_FILENO, ab.buf, ab.len);
     ab_free(&ab);
+}
+
+void editor_draw_welcome_text(void) {
+    char buf[32];
+
+    // +4 to account for padding
+    if (editor_state.screen_cols < (int)WELCOME_LOGO_COLS + 4) {
+        return;
+    }
+    if (editor_state.screen_rows < (int)WELCOME_LOGO_ROWS + 4) {
+        return;
+    }
+
+    write(STDOUT_FILENO, "\x1b[?25l", 6); // hide cursor
+
+    int draw_x = (editor_state.screen_cols / 2) - (WELCOME_LOGO_COLS / 2);
+    int draw_y = (editor_state.screen_rows / 2) - (WELCOME_LOGO_ROWS / 2);
+    int y_modifier = 0;
+
+    // draw a1 welcome logo
+    while (y_modifier < (int)WELCOME_LOGO_ROWS) {
+        snprintf(buf, sizeof(buf), "\x1b[%d;%dH", draw_y + y_modifier, draw_x);
+        write(STDOUT_FILENO, buf, strlen(buf));
+        write(STDOUT_FILENO, welcome_logo[y_modifier], WELCOME_LOGO_COLS);
+        y_modifier++;
+    }
+
+    char subtitle_buf[50];
+    int len = snprintf(subtitle_buf, sizeof(subtitle_buf),
+                       "The A1 Text Editor - Version %s", A1_VERSION);
+
+    draw_x = (editor_state.screen_cols / 2) - (strlen(subtitle_buf) / 2);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", draw_y + y_modifier + 1, draw_x);
+    write(STDOUT_FILENO, buf, strlen(buf));
+    write(STDOUT_FILENO, subtitle_buf, len);
+
+    write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
+    write(STDOUT_FILENO, "\x1b[1;1H", 6); // move cursor to top left
 }
 
 void editor_set_status_message(const char *fmt, ...) {

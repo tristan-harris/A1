@@ -18,7 +18,11 @@ int main(int argc, char *argv[]) {
     if (argc >= 2) {
         editor_open(argv[1]);
     } else {
-        editor_insert_row(0, "", 0); // empty new file
+        editor_insert_row(0, "", 0);   // empty new file
+        editor_state.modified = false; // override insert row setting modified
+        editor_refresh_screen();
+        editor_draw_welcome_text();
+        editor_process_keypress();
     }
 
     while (true) {

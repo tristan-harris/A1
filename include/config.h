@@ -5,4 +5,6 @@
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE
 
+#define A1_VERSION "0.0.1"
+
 #endif
