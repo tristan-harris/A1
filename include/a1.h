@@ -57,7 +57,7 @@ typedef struct {
     EditorRow *rows; // dynamic array of rows
     const EditorMode *mode;     // normal, insert, command etc.
     EditorFindState find_state; // to store find mode variables
-    bool dirty; // whether file has been modified since last write
+    bool modified; // whether file has been changed since last write
     char *filename;
     char status_msg[80];
     time_t status_msg_time;

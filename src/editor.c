@@ -95,7 +95,7 @@ void editor_insert_row(const int row_idx, const char *string,
     editor_update_row(&editor_state.rows[row_idx]);
 
     editor_state.num_rows++;
-    editor_state.dirty = true;
+    editor_state.modified = true;
 }
 
 void editor_free_row(const EditorRow *row) {
@@ -111,7 +111,7 @@ void editor_del_row(int row_idx) {
     memmove(&editor_state.rows[row_idx], &editor_state.rows[row_idx + 1],
             sizeof(EditorRow) * (editor_state.num_rows - row_idx - 1));
     editor_state.num_rows--;
-    editor_state.dirty = true;
+    editor_state.modified = true;
 }
 
 void editor_row_insert_char(EditorRow *row, int col_idx, int c) {
@@ -124,7 +124,7 @@ void editor_row_insert_char(EditorRow *row, int col_idx, int c) {
     row->size++;
     row->chars[col_idx] = c;
     editor_update_row(row);
-    editor_state.dirty = true;
+    editor_state.modified = true;
 }
 
 void editor_row_append_string(EditorRow *row, const char *string, size_t len) {
@@ -133,7 +133,7 @@ void editor_row_append_string(EditorRow *row, const char *string, size_t len) {
     row->size += len;
     row->chars[row->size] = '\0';
     editor_update_row(row);
-    editor_state.dirty = true;
+    editor_state.modified = true;
 }
 
 void editor_row_del_char(EditorRow *row, int col_idx) {
@@ -144,7 +144,7 @@ void editor_row_del_char(EditorRow *row, int col_idx) {
             row->size - col_idx);
     row->size--;
     editor_update_row(row);
-    editor_state.dirty = true;
+    editor_state.modified = true;
 }
 
 void editor_row_invert_letter(EditorRow *row, int col_idx) {
@@ -302,7 +302,7 @@ void editor_open(const char *filename) {
     }
     free(line);
     fclose(fp);
-    editor_state.dirty = false;
+    editor_state.modified = false;
 }
 
 void editor_save(void) {
@@ -325,7 +325,7 @@ void editor_save(void) {
             if (write(fd, buf, len) == len) {
                 close(fd);
                 free(buf);
-                editor_state.dirty = false;
+                editor_state.modified = false;
                 editor_set_status_message("%d bytes written to disk.", len);
                 return;
             }
@@ -453,7 +453,7 @@ void editor_draw_status_bar(AppendBuffer *ab) {
         snprintf(left_status, sizeof(left_status),
                  "\x1b[1;7m%s\x1b[0;7m %.20s %s", editor_state.mode->name,
                  editor_state.filename ? editor_state.filename : "[Unnamed]",
-                 editor_state.dirty ? "[Modified]" : "");
+                 editor_state.modified ? "[Modified]" : "");
     int escape_sequence_char_count = 12;
 
     char scroll_percent[4]; // need to take null character (\0) into account
@@ -503,8 +503,8 @@ void editor_refresh_screen(void) {
     AppendBuffer ab = {.buf = NULL, .len = 0};
 
     if (editor_state.mode == &insert_mode) {
-        ab_append(&ab, "\x1b[?25l", 6);
-    } // hide cursor
+        ab_append(&ab, "\x1b[?25l", 6); // hide cursor
+    }
 
     ab_append(&ab, "\x1b[H", 3); // move cursor to top-left
 
@@ -522,8 +522,8 @@ void editor_refresh_screen(void) {
     ab_append(&ab, buf, strlen(buf));
 
     if (editor_state.mode == &insert_mode) {
-        ab_append(&ab, "\x1b[?25h", 6);
-    } // show cursor
+        ab_append(&ab, "\x1b[?25h", 6); // show cursor
+    }
 
     write(STDOUT_FILENO, ab.buf, ab.len);
     ab_free(&ab);
@@ -685,7 +685,7 @@ void init_editor(void) {
     editor_state.find_state.find_cursor_x = 0;
     editor_state.find_state.find_cursor_y = 0;
 
-    editor_state.dirty = false;
+    editor_state.modified = false;
     editor_state.mode = NULL;
     editor_state.filename = NULL;
     editor_state.status_msg[0] = '\0';

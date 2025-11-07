@@ -101,7 +101,9 @@ void normal_mode_input(int input) {
         break;
 
     case 'd':
-        editor_del_row(editor_state.cursor_y);
+        if (editor_state.num_rows > 1) {
+            editor_del_row(editor_state.cursor_y);
+        }
         break;
 
     case 'f':
@@ -160,7 +162,7 @@ void normal_mode_input(int input) {
         break;
 
     case 'q':
-        if (editor_state.dirty) {
+        if (editor_state.modified) {
             editor_set_status_message("File has unsaved changes.");
         } else {
             quit();
@@ -183,6 +185,7 @@ void normal_mode_input(int input) {
 
     case '~':
         editor_row_invert_letter(row, editor_state.cursor_x);
+        editor_move_cursor(DIR_RIGHT);
         break;
     }
 }
