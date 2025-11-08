@@ -1,5 +1,4 @@
-#ifndef STRUCTURES_H
-#define STRUCTURES_H
+#pragma once
 
 // A very simple "append buffer" structure, that is a heap
 // allocated string that can be appended to. This is useful in order to
@@ -13,5 +12,3 @@ typedef struct {
 
 void ab_append(AppendBuffer *ab, const char *string, int len);
 void ab_free(AppendBuffer *ab);
-
-#endif

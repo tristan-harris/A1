@@ -1,4 +1,6 @@
-#include "../include/welcome_logo.h"
+#include "config.h"
+
+#include "welcome_logo.h"
 
 const char *welcome_logo[] = {"               AAA                  1111111   ",
                               "              A:::A                1::::::1   ",

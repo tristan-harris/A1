@@ -1,11 +1,9 @@
-#include "../include/config.h"
+#include "config.h"
 
-#include "../include/a1.h"
+#include "a1.h"
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -75,80 +73,6 @@ void enable_raw_mode(void) {
     }
 }
 
-int editor_read_key(void) {
-    int bytes_read;
-    char c;
-
-    while ((bytes_read = read(STDIN_FILENO, &c, 1)) != 1) {
-        // EAGAIN = "try again error" (required for Cygwin)
-        if (bytes_read == -1 && errno != EAGAIN) {
-            die("editor_read_key()");
-        }
-    }
-
-    if (c == ESCAPE) {
-        char seq[3];
-
-        if (read(STDIN_FILENO, &seq[0], 1) != 1) {
-            return ESCAPE;
-        }
-        if (read(STDIN_FILENO, &seq[1], 1) != 1) {
-            return ESCAPE;
-        }
-
-        if (seq[0] == '[') {
-            if (seq[1] >= '0' && seq[1] <= '9') {
-                if (read(STDIN_FILENO, &seq[2], 1) != 1) {
-                    return ESCAPE;
-                }
-                if (seq[2] == '~') {
-                    switch (seq[1]) {
-                    case '1':
-                        return HOME_KEY;
-                    case '3':
-                        return DEL_KEY;
-                    case '4':
-                        return END_KEY;
-                    case '5':
-                        return PAGE_UP;
-                    case '6':
-                        return PAGE_DOWN;
-                    case '7':
-                        return HOME_KEY;
-                    case '8':
-                        return END_KEY;
-                    }
-                }
-            } else {
-                switch (seq[1]) {
-                case 'A':
-                    return ARROW_UP;
-                case 'B':
-                    return ARROW_DOWN;
-                case 'C':
-                    return ARROW_RIGHT;
-                case 'D':
-                    return ARROW_LEFT;
-                case 'H':
-                    return HOME_KEY;
-                case 'F':
-                    return END_KEY;
-                }
-            }
-        } else if (seq[0] == 'O') {
-            switch (seq[1]) {
-            case 'H':
-                return HOME_KEY;
-            case 'F':
-                return END_KEY;
-            }
-        }
-        return ESCAPE;
-    } else {
-        return c;
-    }
-}
-
 int get_cursor_position(int *rows, int *cols) {
     char buf[32];
     unsigned int i = 0;
@@ -196,23 +120,5 @@ int get_window_size(int *rows, int *cols) {
         *cols = ws.ws_col;
         *rows = ws.ws_row;
         return 0;
-    }
-}
-
-// based on Neovim, decided by scroll offset not cursor position
-void get_scroll_percentage(char *buf, size_t size) {
-    if (editor_state.row_offset == 0) {
-        strncpy(buf, "Top", size);
-    }
-    // -1 required for empty new line (~)
-    else if (editor_state.num_rows - editor_state.screen_rows ==
-             editor_state.row_offset) {
-        strncpy(buf, "Bot", size);
-    } else {
-        double percentage =
-            ((double)(editor_state.row_offset) /
-             (editor_state.num_rows - editor_state.screen_rows)) *
-            100;
-        snprintf(buf, size, "%d%%", (int)percentage);
     }
 }

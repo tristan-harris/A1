@@ -25,7 +25,7 @@ $(TARGET): $(OBJECTS)
 # compilation (compile each .c file to .o)
 # | $(OBJDIR) ensures obj dir exists before compilation
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
-	$(CC) $(CFLAGS) -I $(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)

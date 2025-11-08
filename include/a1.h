@@ -1,8 +1,6 @@
-#ifndef A1_H
-#define A1_H
+#pragma once
 
-#include "../include/modes.h"
-
+#include "modes.h"
 #include <stdbool.h>
 #include <termios.h>
 #include <time.h>
@@ -65,5 +63,3 @@ typedef struct {
 } EditorState;
 
 extern EditorState editor_state;
-
-#endif
