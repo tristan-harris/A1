@@ -110,9 +110,7 @@ void editor_draw_rows(AppendBuffer *ab) {
         } else {
             int len = editor_state.rows[filerow].render_size -
                       editor_state.col_offset;
-            if (len < 0) {
-                len = 0;
-            }
+            if (len < 0) { len = 0; }
             if (len > editor_state.screen_cols) {
                 len = editor_state.screen_cols;
             }
@@ -120,11 +118,10 @@ void editor_draw_rows(AppendBuffer *ab) {
             // draw block cursor by inverting cell at cursor
             if (filerow == editor_state.cursor_y &&
                 editor_state.mode == &normal_mode) {
-                // if blank line still draw block character
                 if (len == 0) {
+                    // if blank line still draw block character
                     ab_append(ab, "\x1b[7m \x1b[m", 8);
                 } else {
-                    // FIX: col_offset crash
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.col_offset],
@@ -142,7 +139,8 @@ void editor_draw_rows(AppendBuffer *ab) {
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.render_x + 1],
-                              len - editor_state.render_x - 1);
+                              len + editor_state.col_offset -
+                                  editor_state.render_x - 1);
                 }
             } else {
                 ab_append(
