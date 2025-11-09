@@ -1,6 +1,8 @@
 #include "config.h"
 
+#include "a1.h"
 #include "input.h"
+#include "modes.h"
 #include "output.h"
 #include "util.h"
 #include "welcome_logo.h"
@@ -22,14 +24,20 @@ void editor_refresh_screen(void) {
 
     editor_draw_rows(&ab);
     editor_draw_status_bar(&ab);
-    editor_draw_message_bar(&ab);
+    editor_draw_bottom_bar(&ab);
 
     char buf[32];
 
-    // move cursor to stored positon
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH",
-             (editor_state.cursor_y - editor_state.row_offset) + 1,
-             (editor_state.render_x - editor_state.col_offset) + 1);
+    // if command mode, return cursor to bottom of screen at input buffer
+    // else return to text editor buffer position
+    if (editor_state.mode == &command_mode) {
+        snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor_state.screen_cols - 1,
+                 editor_state.command_state.cursor_x + 1);
+    } else {
+        snprintf(buf, sizeof(buf), "\x1b[%d;%dH",
+                 (editor_state.cursor_y - editor_state.row_offset) + 1,
+                 (editor_state.render_x - editor_state.col_offset) + 1);
+    }
 
     ab_append(&ab, buf, strlen(buf));
 
@@ -43,9 +51,7 @@ void editor_refresh_screen(void) {
 
 void editor_page_scroll(EditorDirection dir, bool half) {
     int scroll_amount = editor_state.screen_rows;
-    if (half) {
-        scroll_amount /= 2;
-    }
+    if (half) { scroll_amount /= 2; }
 
     int new_y;
 
@@ -53,9 +59,7 @@ void editor_page_scroll(EditorDirection dir, bool half) {
     case DIR_UP:
         if (editor_state.cursor_y > 0) {
             new_y = editor_state.cursor_y - scroll_amount;
-            if (new_y < 0) {
-                new_y = 0;
-            }
+            if (new_y < 0) { new_y = 0; }
             editor_set_cursor_y(new_y);
         }
         break;
@@ -197,27 +201,28 @@ void editor_draw_status_bar(AppendBuffer *ab) {
     ab_append(ab, "\r\n", 2);
 }
 
-void editor_draw_message_bar(AppendBuffer *ab) {
+void editor_draw_bottom_bar(AppendBuffer *ab) {
     ab_append(ab, "\x1b[K", 3); // erase from active position to end of line
-    int msglen = strlen(editor_state.status_msg);
-    if (msglen > editor_state.screen_cols) {
-        msglen = editor_state.screen_cols;
+    if (editor_state.mode == &command_mode) {
+        ab_append(ab, editor_state.command_state.buffer,
+                  editor_state.command_state.cursor_x);
     }
-    if (msglen && time(NULL) - editor_state.status_msg_time < 5) {
-        ab_append(ab, editor_state.status_msg, msglen);
+    // draw message if not in command mode
+    else {
+        int msglen = strlen(editor_state.status_msg);
+        if (msglen > editor_state.screen_cols) {
+            msglen = editor_state.screen_cols;
+        }
+        if (msglen && time(NULL) - editor_state.status_msg_time < 5) {
+            ab_append(ab, editor_state.status_msg, msglen);
+        }
     }
 }
 
 void editor_draw_welcome_text(void) {
-    char buf[32];
-
     // +4 to account for padding
-    if (editor_state.screen_cols < (int)WELCOME_LOGO_COLS + 4) {
-        return;
-    }
-    if (editor_state.screen_rows < (int)WELCOME_LOGO_ROWS + 4) {
-        return;
-    }
+    if (editor_state.screen_cols < (int)WELCOME_LOGO_COLS + 4) { return; }
+    if (editor_state.screen_rows < (int)WELCOME_LOGO_ROWS + 4) { return; }
 
     write(STDOUT_FILENO, "\x1b[?25l", 6); // hide cursor
 
@@ -227,8 +232,7 @@ void editor_draw_welcome_text(void) {
 
     // draw a1 welcome logo
     while (y_modifier < (int)WELCOME_LOGO_ROWS) {
-        snprintf(buf, sizeof(buf), "\x1b[%d;%dH", draw_y + y_modifier, draw_x);
-        write(STDOUT_FILENO, buf, strlen(buf));
+        dprintf(STDOUT_FILENO, "\x1b[%d;%dH", draw_y + y_modifier, draw_x);
         write(STDOUT_FILENO, welcome_logo[y_modifier], WELCOME_LOGO_COLS);
         y_modifier++;
     }
@@ -238,8 +242,7 @@ void editor_draw_welcome_text(void) {
                        "The A1 Text Editor - Version %s", A1_VERSION);
 
     draw_x = (editor_state.screen_cols / 2) - (strlen(subtitle_buf) / 2);
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", draw_y + y_modifier + 1, draw_x);
-    write(STDOUT_FILENO, buf, strlen(buf));
+    dprintf(STDOUT_FILENO, "\x1b[%d;%dH", draw_y + y_modifier + 1, draw_x);
     write(STDOUT_FILENO, subtitle_buf, len);
 
     write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor

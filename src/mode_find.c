@@ -1,21 +1,32 @@
 #include "config.h"
 
 #include "input.h"
+#include "modes.h"
+#include "terminal.h"
 #include "util.h"
 #include <stdlib.h>
 #include <string.h>
 
-void find_mode_entry(void *data) {}
+void find_mode_entry(void *data) {
+    if (data == NULL) { die("find_mode_entry recieved NULL"); }
+
+    FindModeData *mode_data = (FindModeData *)data;
+    editor_state.find_state.string = mode_data->string;
+}
 
 void find_mode_input(int input) {
-    switch (input) {}
+    switch (input) {
+    case ESCAPE:
+        transition_mode(&normal_mode, NULL);
+        break;
+    }
 }
+
+void find_mode_exit(void) {}
 
 void editor_find(void) {
     char *query = editor_prompt("Find: %s");
-    if (query == NULL) {
-        return;
-    }
+    if (query == NULL) { return; }
 
     for (int i = 0; i < editor_state.num_rows; i++) {
         EditorRow *row = &editor_state.rows[i];
@@ -34,5 +45,3 @@ void editor_find(void) {
     }
     free(query);
 }
-
-void find_mode_exit(void) {}

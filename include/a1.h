@@ -30,9 +30,14 @@ typedef enum {
 typedef enum { DIR_UP, DIR_RIGHT, DIR_LEFT, DIR_DOWN } EditorDirection;
 
 typedef struct {
-    char *text;
-    int find_cursor_x;
-    int find_cursor_y;
+    char buffer[100];
+    int cursor_x;
+} EditorCommandState;
+
+typedef struct {
+    char *string;
+    int cursor_x;
+    int cursor_y;
 } EditorFindState;
 
 typedef struct {
@@ -53,8 +58,9 @@ typedef struct {
     int screen_cols; // number of columns available in the emulator window
     int num_rows;    // number of rows that make up the text buffer
     EditorRow *rows; // dynamic array of rows
-    const EditorMode *mode;     // normal, insert, command etc.
-    EditorFindState find_state; // to store find mode variables
+    const EditorMode *mode;           // normal, insert, command etc.
+    EditorCommandState command_state; // to store command mode variables
+    EditorFindState find_state;       // to store find mode variables
     bool modified; // whether file has been changed since last write
     char *filename;
     char status_msg[80];

@@ -2,9 +2,13 @@
 
 #include "input.h"
 #include "operations.h"
+#include "terminal.h"
 #include <unistd.h>
 
 void insert_mode_entry(void *data) {
+    if (data != NULL) {
+        die("insert_mode_entry");
+    }
     write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
 }
 

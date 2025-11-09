@@ -24,9 +24,9 @@ void init_editor(void) {
     editor_state.num_rows = 0;
     editor_state.rows = NULL;
 
-    editor_state.find_state.text = NULL;
-    editor_state.find_state.find_cursor_x = 0;
-    editor_state.find_state.find_cursor_y = 0;
+    editor_state.find_state.string = NULL;
+    editor_state.find_state.cursor_x = 0;
+    editor_state.find_state.cursor_y = 0;
 
     editor_state.modified = false;
     editor_state.mode = NULL;
@@ -36,9 +36,7 @@ void init_editor(void) {
 
     int result =
         get_window_size(&editor_state.screen_rows, &editor_state.screen_cols);
-    if (result == -1) {
-        die("getWindowSize");
-    }
+    if (result == -1) { die("getWindowSize"); }
 
     editor_state.screen_rows -= 2; // accounting for status bar and message rows
 
@@ -62,7 +60,6 @@ int main(int argc, char *argv[]) {
     while (true) {
         editor_refresh_screen();
         editor_process_keypress();
-        editor_set_status_message("%d", editor_state.cursor_x);
     }
 
     return EXIT_SUCCESS;

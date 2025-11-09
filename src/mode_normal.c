@@ -3,12 +3,15 @@
 #include "a1.h"
 #include "file_io.h"
 #include "input.h"
+#include "modes.h"
 #include "operations.h"
 #include "output.h"
 #include "terminal.h"
 #include <unistd.h>
 
 void normal_mode_entry(void *data) {
+    if (data != NULL) { die("normal_mode_entry"); }
+
     write(STDOUT_FILENO, "\x1b[?25l", 6); // hide cursor
 
     // move back from end of line (needed for transitioning from insert mode)
@@ -53,7 +56,7 @@ void normal_mode_input(int input) {
         break;
 
     case '^':
-        editor_jump_to_first_non_whitespace_char(row);
+        editor_jump_invert_char(row);
         break;
 
     case '$':
@@ -72,12 +75,17 @@ void normal_mode_input(int input) {
     case 'd':
         if (editor_state.num_rows > 1) {
             editor_del_row(editor_state.cursor_y);
+            editor_move_cursor(DIR_UP);
+        } else {
+            // TODO: clear row if only row
         }
         break;
 
-    case 'f':
-        transition_mode(&command_mode, "Find: ");
+    case 'f': {
+        CommandModeData data = {.prompt = "find "};
+        transition_mode(&command_mode, &data);
         break;
+    }
 
     case 'g':
         editor_set_cursor_y(0);
