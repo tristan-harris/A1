@@ -38,7 +38,7 @@ void editor_find(void) {
 
             // so that editor_render_scroll in the next update automatically
             // scrolls up to the cursor position on the next update
-            editor_state.row_offset = editor_state.num_rows;
+            editor_state.row_scroll_offset = editor_state.num_rows;
 
             break;
         }

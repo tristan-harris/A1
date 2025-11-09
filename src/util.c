@@ -37,16 +37,16 @@ int editor_row_rx_to_cx(const EditorRow *row, const int rx) {
 
 // based on stock Neovim, decided by scroll offset not cursor position
 void get_scroll_percentage(char *buf, size_t size) {
-    if (editor_state.row_offset == 0) {
+    if (editor_state.row_scroll_offset == 0) {
         strncpy(buf, "Top", size);
     }
     // -1 required for empty new line (~)
     else if (editor_state.num_rows - editor_state.screen_rows ==
-             editor_state.row_offset) {
+             editor_state.row_scroll_offset) {
         strncpy(buf, "Bot", size);
     } else {
         double percentage =
-            ((double)(editor_state.row_offset) /
+            ((double)(editor_state.row_scroll_offset) /
              (editor_state.num_rows - editor_state.screen_rows)) *
             100;
         snprintf(buf, size, "%d%%", (int)percentage);

@@ -6,9 +6,7 @@
 #include <unistd.h>
 
 void insert_mode_entry(void *data) {
-    if (data != NULL) {
-        die("insert_mode_entry");
-    }
+    if (data != NULL) { die("insert_mode_entry"); }
     write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
 }
 
@@ -29,19 +27,17 @@ void insert_mode_input(int input) {
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
-        if (input == DEL_KEY) {
-            editor_move_cursor(DIR_RIGHT);
-        }
+        if (input == DEL_KEY) { editor_move_cursor(DIR_RIGHT); }
         editor_del_char();
         break;
 
     case PAGE_UP:
     case PAGE_DOWN: {
         if (input == PAGE_UP) {
-            editor_state.cursor_y = editor_state.row_offset;
+            editor_state.cursor_y = editor_state.row_scroll_offset;
         } else if (input == PAGE_DOWN) {
             editor_state.cursor_y =
-                editor_state.row_offset + editor_state.screen_rows - 1;
+                editor_state.row_scroll_offset + editor_state.screen_rows - 1;
             if (editor_state.cursor_y > editor_state.num_rows)
                 editor_state.cursor_y = editor_state.num_rows;
         }

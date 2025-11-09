@@ -48,16 +48,16 @@ typedef struct {
 } EditorRow;
 
 typedef struct {
-    int cursor_x;    // actual cursor x position
-    int cursor_y;    // actual cursor y position
-    int target_x;    // intended x position of cursor based on previous line(s)
-    int render_x;    // rendered position of cursor
-    int row_offset;  // offset of rows displayed (vertical scroll)
-    int col_offset;  // offset of columns display (horizontal scroll)
-    int screen_rows; // number of rows available in the emulator window
-    int screen_cols; // number of columns available in the emulator window
-    int num_rows;    // number of rows that make up the text buffer
-    EditorRow *rows; // dynamic array of rows
+    int cursor_x; // actual cursor x position
+    int cursor_y; // actual cursor y position
+    int target_x; // intended x position of cursor based on previous line(s)
+    int render_x; // rendered position of cursor
+    int row_scroll_offset; // offset of rows displayed (vertical scroll)
+    int col_scroll_offset; // offset of columns display (horizontal scroll)
+    int screen_rows;       // number of rows available in the emulator window
+    int screen_cols;       // number of columns available in the emulator window
+    int num_rows;          // number of rows that make up the text buffer
+    EditorRow *rows;       // dynamic array of rows
     const EditorMode *mode;           // normal, insert, command etc.
     EditorCommandState command_state; // to store command mode variables
     EditorFindState find_state;       // to store find mode variables

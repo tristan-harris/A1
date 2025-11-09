@@ -19,8 +19,8 @@ void init_editor(void) {
     editor_state.cursor_y = 0;
     editor_state.target_x = 0;
     editor_state.render_x = 0;
-    editor_state.row_offset = 0;
-    editor_state.col_offset = 0;
+    editor_state.row_scroll_offset = 0;
+    editor_state.col_scroll_offset = 0;
     editor_state.num_rows = 0;
     editor_state.rows = NULL;
 

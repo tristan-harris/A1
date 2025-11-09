@@ -35,8 +35,8 @@ void editor_refresh_screen(void) {
                  editor_state.command_state.cursor_x + 1);
     } else {
         snprintf(buf, sizeof(buf), "\x1b[%d;%dH",
-                 (editor_state.cursor_y - editor_state.row_offset) + 1,
-                 (editor_state.render_x - editor_state.col_offset) + 1);
+                 (editor_state.cursor_y - editor_state.row_scroll_offset) + 1,
+                 (editor_state.render_x - editor_state.col_scroll_offset) + 1);
     }
 
     ab_append(&ab, buf, strlen(buf));
@@ -86,34 +86,34 @@ void editor_scroll_render_update(void) {
         editor_state.render_x = editor_row_cx_to_rx(
             &editor_state.rows[editor_state.cursor_y], editor_state.cursor_x);
     }
-    if (editor_state.cursor_y < editor_state.row_offset) {
-        editor_state.row_offset = editor_state.cursor_y;
+    if (editor_state.cursor_y < editor_state.row_scroll_offset) {
+        editor_state.row_scroll_offset = editor_state.cursor_y;
     }
     if (editor_state.cursor_y >=
-        editor_state.row_offset + editor_state.screen_rows) {
-        editor_state.row_offset =
+        editor_state.row_scroll_offset + editor_state.screen_rows) {
+        editor_state.row_scroll_offset =
             editor_state.cursor_y - editor_state.screen_rows + 1;
     }
-    if (editor_state.render_x < editor_state.col_offset) {
-        editor_state.col_offset = editor_state.render_x;
+    if (editor_state.render_x < editor_state.col_scroll_offset) {
+        editor_state.col_scroll_offset = editor_state.render_x;
     }
     if (editor_state.render_x >=
-        editor_state.col_offset + editor_state.screen_cols) {
-        editor_state.col_offset =
+        editor_state.col_scroll_offset + editor_state.screen_cols) {
+        editor_state.col_scroll_offset =
             editor_state.render_x - editor_state.screen_cols + 1;
     }
 }
 
 void editor_draw_rows(AppendBuffer *ab) {
     for (int y = 0; y < editor_state.screen_rows; y++) {
-        int filerow = y + editor_state.row_offset;
+        int filerow = y + editor_state.row_scroll_offset;
 
         // if past text buffer, fill lines below with '~'
         if (filerow >= editor_state.num_rows) {
             ab_append(ab, "~", 1);
         } else {
             int len = editor_state.rows[filerow].render_size -
-                      editor_state.col_offset;
+                      editor_state.col_scroll_offset;
             if (len < 0) { len = 0; }
             if (len > editor_state.screen_cols) {
                 len = editor_state.screen_cols;
@@ -128,8 +128,9 @@ void editor_draw_rows(AppendBuffer *ab) {
                 } else {
                     ab_append(ab,
                               &editor_state.rows[filerow]
-                                   .render[editor_state.col_offset],
-                              editor_state.render_x - editor_state.col_offset);
+                                   .render[editor_state.col_scroll_offset],
+                              editor_state.render_x -
+                                  editor_state.col_scroll_offset);
 
                     ab_append(ab, "\x1b[7m", 4); // invert colors
 
@@ -143,14 +144,14 @@ void editor_draw_rows(AppendBuffer *ab) {
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.render_x + 1],
-                              len + editor_state.col_offset -
+                              len + editor_state.col_scroll_offset -
                                   editor_state.render_x - 1);
                 }
             } else {
-                ab_append(
-                    ab,
-                    &editor_state.rows[filerow].render[editor_state.col_offset],
-                    len);
+                ab_append(ab,
+                          &editor_state.rows[filerow]
+                               .render[editor_state.col_scroll_offset],
+                          len);
             }
         }
 

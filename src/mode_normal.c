@@ -96,21 +96,21 @@ void normal_mode_input(int input) {
         break;
 
     case 'H':
-        editor_set_cursor_y(editor_state.row_offset);
+        editor_set_cursor_y(editor_state.row_scroll_offset);
         break;
     case 'M':
-        if (editor_state.row_offset + editor_state.screen_rows / 2 <
+        if (editor_state.row_scroll_offset + editor_state.screen_rows / 2 <
             editor_state.num_rows) {
-            editor_set_cursor_y(editor_state.row_offset +
+            editor_set_cursor_y(editor_state.row_scroll_offset +
                                 editor_state.screen_rows / 2);
         } else {
             editor_set_cursor_y(editor_state.num_rows - 1);
         }
         break;
     case 'L':
-        if (editor_state.row_offset + editor_state.screen_rows - 1 <
+        if (editor_state.row_scroll_offset + editor_state.screen_rows - 1 <
             editor_state.num_rows) {
-            editor_set_cursor_y(editor_state.row_offset +
+            editor_set_cursor_y(editor_state.row_scroll_offset +
                                 editor_state.screen_rows - 1);
         } else {
             editor_set_cursor_y(editor_state.num_rows - 1);
