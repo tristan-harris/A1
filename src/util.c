@@ -145,3 +145,14 @@ char **split_string(const char *string, const char delim, int *count) {
         return tokens;
     }
 }
+
+// returns number of digits in number
+int num_digits(int num) {
+    int digits = 0;
+    do {
+        num /= 10;
+        digits++;
+    } while (num != 0);
+
+    return digits;
+}

@@ -12,8 +12,13 @@
 #include <unistd.h>
 
 void editor_refresh_screen(void) {
+
+    // +1 for padding between line number and text
+    editor_state.num_col_width = num_digits(editor_state.num_rows) + 1;
+
     editor_scroll_render_update();
 
+    // to be added to with the contents of the screen
     AppendBuffer ab = {.buf = NULL, .len = 0};
 
     if (editor_state.mode == &insert_mode) {
@@ -26,20 +31,23 @@ void editor_refresh_screen(void) {
     editor_draw_status_bar(&ab);
     editor_draw_bottom_bar(&ab);
 
-    char buf[32];
+    char command_buf[32];
 
     // if command mode, return cursor to bottom of screen at input buffer
     // else return to text editor buffer position
     if (editor_state.mode == &command_mode) {
-        snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor_state.screen_cols - 1,
+        snprintf(command_buf, sizeof(command_buf), "\x1b[%d;%dH",
+                 editor_state.screen_cols - 1,
                  editor_state.command_state.cursor_x + 1);
     } else {
-        snprintf(buf, sizeof(buf), "\x1b[%d;%dH",
+        snprintf(command_buf, sizeof(command_buf), "\x1b[%d;%dH",
                  (editor_state.cursor_y - editor_state.row_scroll_offset) + 1,
-                 (editor_state.render_x - editor_state.col_scroll_offset) + 1);
+                 (editor_state.render_x - editor_state.col_scroll_offset +
+                  editor_state.num_col_width) +
+                     1);
     }
 
-    ab_append(&ab, buf, strlen(buf));
+    ab_append(&ab, command_buf, strlen(command_buf));
 
     if (editor_state.mode == &insert_mode) {
         ab_append(&ab, "\x1b[?25h", 6); // show cursor
@@ -80,31 +88,41 @@ void editor_page_scroll(EditorDirection dir, bool half) {
 }
 
 void editor_scroll_render_update(void) {
-    editor_state.render_x = 0;
+    // update render_x
+    editor_state.render_x = editor_row_cx_to_rx(
+        &editor_state.rows[editor_state.cursor_y], editor_state.cursor_x);
 
-    if (editor_state.cursor_y < editor_state.num_rows) {
-        editor_state.render_x = editor_row_cx_to_rx(
-            &editor_state.rows[editor_state.cursor_y], editor_state.cursor_x);
-    }
+    // if scrolled up
     if (editor_state.cursor_y < editor_state.row_scroll_offset) {
         editor_state.row_scroll_offset = editor_state.cursor_y;
     }
+
+    // if scrolled down
     if (editor_state.cursor_y >=
         editor_state.row_scroll_offset + editor_state.screen_rows) {
         editor_state.row_scroll_offset =
             editor_state.cursor_y - editor_state.screen_rows + 1;
     }
+
+    // if scrolled left
     if (editor_state.render_x < editor_state.col_scroll_offset) {
         editor_state.col_scroll_offset = editor_state.render_x;
     }
+
+    // if scrolled right
     if (editor_state.render_x >=
-        editor_state.col_scroll_offset + editor_state.screen_cols) {
+        editor_state.col_scroll_offset +
+            (editor_state.screen_cols - editor_state.num_col_width)) {
         editor_state.col_scroll_offset =
-            editor_state.render_x - editor_state.screen_cols + 1;
+            editor_state.render_x -
+            (editor_state.screen_cols - editor_state.num_col_width) + 1;
     }
 }
 
 void editor_draw_rows(AppendBuffer *ab) {
+
+    char num_col_buf[15];
+
     for (int y = 0; y < editor_state.screen_rows; y++) {
         int filerow = y + editor_state.row_scroll_offset;
 
@@ -112,25 +130,40 @@ void editor_draw_rows(AppendBuffer *ab) {
         if (filerow >= editor_state.num_rows) {
             ab_append(ab, "~", 1);
         } else {
-            int len = editor_state.rows[filerow].render_size -
-                      editor_state.col_scroll_offset;
-            if (len < 0) { len = 0; }
-            if (len > editor_state.screen_cols) {
-                len = editor_state.screen_cols;
+            // line number
+            ab_append(ab, "\x1b[2m", 4); // dim
+            int num_len = snprintf(num_col_buf, sizeof(num_col_buf), "%*d ",
+                                   editor_state.num_col_width - 1, filerow + 1);
+            ab_append(ab, num_col_buf, num_len);
+            ab_append(ab, "\x1b[m", 3); // un-dim (reset formatting)
+
+            int line_len = editor_state.rows[filerow].render_size -
+                           editor_state.col_scroll_offset;
+
+            if (line_len >
+                editor_state.screen_cols - editor_state.num_col_width) {
+                line_len =
+                    editor_state.screen_cols - editor_state.num_col_width;
             }
+
+            if (line_len < 0) { line_len = 0; }
 
             // draw block cursor by inverting cell at cursor
             if (filerow == editor_state.cursor_y &&
                 editor_state.mode == &normal_mode) {
-                if (len == 0) {
+                if (line_len == 0) {
                     // if blank line still draw block character
                     ab_append(ab, "\x1b[7m \x1b[m", 8);
                 } else {
+                    int left_len =
+                        editor_state.render_x - editor_state.col_scroll_offset;
+
+                    // if (left_len + 1 > line_len) { left_len = line_len - 1; }
+
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.col_scroll_offset],
-                              editor_state.render_x -
-                                  editor_state.col_scroll_offset);
+                              left_len);
 
                     ab_append(ab, "\x1b[7m", 4); // invert colors
 
@@ -144,14 +177,14 @@ void editor_draw_rows(AppendBuffer *ab) {
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.render_x + 1],
-                              len + editor_state.col_scroll_offset -
-                                  editor_state.render_x - 1);
+                              line_len - editor_state.render_x +
+                                  editor_state.col_scroll_offset - 1);
                 }
             } else {
                 ab_append(ab,
                           &editor_state.rows[filerow]
                                .render[editor_state.col_scroll_offset],
-                          len);
+                          line_len);
             }
         }
 

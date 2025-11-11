@@ -54,6 +54,7 @@ typedef struct {
     int render_x; // rendered position of cursor
     int row_scroll_offset; // offset of rows displayed (vertical scroll)
     int col_scroll_offset; // offset of columns display (horizontal scroll)
+    int num_col_width;     // how many cells across the line numbers take
     int screen_rows;       // number of rows available in the emulator window
     int screen_cols;       // number of columns available in the emulator window
     int num_rows;          // number of rows that make up the text buffer

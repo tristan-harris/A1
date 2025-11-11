@@ -6,6 +6,8 @@
 #include <string.h>
 
 void ab_append(AppendBuffer *ab, const char *string, int len) {
+    if (len == 0) { return; }
+
     char *new = realloc(ab->buf, ab->len + len);
 
     if (new == NULL) { return; }
