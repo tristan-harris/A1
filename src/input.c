@@ -175,7 +175,7 @@ void editor_move_cursor(EditorDirection dir) {
 
 // returns index of first non whitespace character (i.e. not tab or space)
 // returns -1 if no character found
-int editor_jump_invert_char(EditorRow *row) {
+int editor_jump_non_whitespace(EditorRow *row) {
     int i = 0;
     while (i < row->size) {
         if (row->chars[i] != ' ' && row->chars[i] != '\t') {

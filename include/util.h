@@ -8,3 +8,4 @@ void get_scroll_percentage(char *buf, size_t size);
 char *editor_rows_to_string(int *buflen);
 char **split_string(const char *string, const char delim, int *count);
 int num_digits(int num);
+bool is_string_integer(char *string);
