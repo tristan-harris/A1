@@ -37,8 +37,8 @@ void command_mode_input(int input) {
         transition_mode(&normal_mode, NULL);
         break;
 
-    case '\r':
-        parse_command();
+    case ENTER:
+        execute_command();
         break;
 
     case BACKSPACE:
@@ -56,9 +56,18 @@ void command_mode_input(int input) {
         break;
 
     default:
+        // prevent input if cursor at end
+        if (editor_state.command_state.cursor_x + 1 >=
+            (int)(sizeof(editor_state.command_state.buffer) /
+                  sizeof(editor_state.command_state.buffer[0]))) {
+            break;
+        }
+
         editor_state.command_state.buffer[editor_state.command_state.cursor_x] =
             input;
         editor_state.command_state.cursor_x++;
+        editor_state.command_state.buffer[editor_state.command_state.cursor_x] =
+            '\0';
         break;
     }
 }
@@ -96,7 +105,14 @@ void goto_command(char **words, int count) {
     transition_mode(&normal_mode, NULL);
 }
 
-void parse_command(void) {
+EditorCommandType parse_command(char *command) {
+    if (strcmp(command, "save") == 0) { return CMD_SAVE; }
+    if (strcmp(command, "find") == 0) { return CMD_FIND; }
+    if (strcmp(command, "goto") == 0) { return CMD_GOTO; }
+    return CMD_UNKNOWN;
+}
+
+void execute_command(void) {
     int count;
     char **words = split_string(editor_state.command_state.buffer, ' ', &count);
 
@@ -106,14 +122,18 @@ void parse_command(void) {
         return;
     }
 
-    if (strcmp(words[0], "save") == 0) {
+    switch (parse_command(words[0])) {
+    case CMD_SAVE:
         transition_mode(&normal_mode, NULL);
         editor_save();
-    } else if (strcmp(words[0], "find") == 0) {
+        break;
+    case CMD_FIND:
         find_command(words, count);
-    } else if (strcmp(words[0], "goto") == 0) {
+        break;
+    case CMD_GOTO:
         goto_command(words, count);
-    } else {
+        break;
+    default:
         editor_set_status_message("Unknown command");
         transition_mode(&normal_mode, NULL);
     }
