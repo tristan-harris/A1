@@ -2,9 +2,11 @@
 
 #include "a1.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // convert cursor x position to equivalent rendered cursor x position
 int editor_row_cx_to_rx(const EditorRow *row, int cx) {
@@ -71,6 +73,29 @@ char *editor_rows_to_string(int *buflen) {
     }
 
     return buf;
+}
+
+void log_message(const char *fmt, ...) {
+    FILE *file = fopen("a1.log", "a");
+
+    // timestamp
+    time_t now = time(NULL);
+    struct tm *time = localtime(&now);
+    fprintf(file, "[%02d:%02d:%02d] ", time->tm_hour, time->tm_min,
+            time->tm_sec);
+
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(file, fmt, args);
+    va_end(args);
+
+    fputc('\n', file);
+    fclose(file);
+}
+
+void clear_log() {
+    FILE *file = fopen("a1.log", "w");
+    fclose(file);
 }
 
 // returns array of strings separated by delimiter (no including delimiter)

@@ -6,6 +6,7 @@
 #include "operations.h"
 #include "output.h"
 #include "terminal.h"
+#include "util.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -47,6 +48,7 @@ void init_editor(void) {
 int main(int argc, char *argv[]) {
     enable_raw_mode();
     init_editor();
+    clear_log();
 
     if (argc >= 2) {
         editor_open(argv[1]);
