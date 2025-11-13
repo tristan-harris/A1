@@ -27,16 +27,12 @@ void quit(void) {
 void disable_raw_mode(void) {
     int result =
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor_state.original_termios);
-    if (result == -1) {
-        die("tcsetattr");
-    }
+    if (result == -1) { die("tcsetattr"); }
 }
 
 void enable_raw_mode(void) {
     int result = tcgetattr(STDIN_FILENO, &editor_state.original_termios);
-    if (result == -1) {
-        die("tcgetattr");
-    }
+    if (result == -1) { die("tcgetattr"); }
 
     atexit(disable_raw_mode);
 
@@ -68,9 +64,7 @@ void enable_raw_mode(void) {
     new_termios.c_cc[VTIME] = 1; // 0.1s
 
     result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_termios);
-    if (result == -1) {
-        die("tcsetattr");
-    }
+    if (result == -1) { die("tcsetattr"); }
 }
 
 int get_cursor_position(int *rows, int *cols) {
@@ -78,29 +72,19 @@ int get_cursor_position(int *rows, int *cols) {
     unsigned int i = 0;
 
     // report cursor position
-    if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) {
-        return -1;
-    }
+    if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) { return -1; }
 
     // read response
     while (i < sizeof(buf) - 1) {
-        if (read(STDIN_FILENO, &buf[i], 1) != 1) {
-            break;
-        }
-        if (buf[i] == 'R') {
-            break;
-        }
+        if (read(STDIN_FILENO, &buf[i], 1) != 1) { break; }
+        if (buf[i] == 'R') { break; }
         i++;
     }
     buf[i] = '\0';
 
     // parse response
-    if (buf[0] != ESCAPE || buf[1] != '[') {
-        return -1;
-    }
-    if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) {
-        return -1;
-    }
+    if (buf[0] != ESCAPE || buf[1] != '[') { return -1; }
+    if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) { return -1; }
 
     return 0;
 }
@@ -112,13 +96,20 @@ int get_window_size(int *rows, int *cols) {
         // if ioctl() fails, attempt querying terminal itself
 
         // go to right-most and bottom-most position
-        if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) {
-            return -1;
-        }
+        if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) { return -1; }
         return get_cursor_position(rows, cols);
     } else {
         *cols = ws.ws_col;
         *rows = ws.ws_row;
         return 0;
     }
+}
+
+void update_window_size(void) {
+    int result =
+        get_window_size(&editor_state.screen_rows, &editor_state.screen_cols);
+    if (result == -1) { die("getWindowSize"); }
+
+    // needed to account for status bar and message rows
+    editor_state.screen_rows -= 2;
 }
