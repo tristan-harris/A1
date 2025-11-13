@@ -42,7 +42,6 @@ void get_scroll_percentage(char *buf, size_t size) {
     if (editor_state.row_scroll_offset == 0) {
         strncpy(buf, "Top", size);
     }
-    // -1 required for empty new line (~)
     else if (editor_state.num_rows - editor_state.screen_rows ==
              editor_state.row_scroll_offset) {
         strncpy(buf, "Bot", size);

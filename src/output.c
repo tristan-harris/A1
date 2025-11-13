@@ -211,41 +211,96 @@ void editor_draw_rows(AppendBuffer *ab) {
     }
 }
 
-// TODO: improve after learning syntax highlighting
+// utility function for status bar text
+// strings containing ANSI escape sequences should only contain those sequences
+void editor_add_to_status_bar_buffer(char buffer[], size_t max_len,
+                                     int *buffer_len, int *buffer_render_len,
+                                     const char *fmt, ...) {
+    if (*buffer_len >= (int)max_len) { return; }
+
+    va_list ap;
+    va_start(ap, fmt);
+    int written_len =
+        vsnprintf(&buffer[*buffer_len], max_len - *buffer_len, fmt, ap);
+    va_end(ap);
+
+    // if not writing escape code
+    if (buffer[*buffer_len] != '\x1b') { *buffer_render_len += written_len; }
+    *buffer_len += written_len;
+}
+
 void editor_draw_status_bar(AppendBuffer *ab) {
-    char left_status[80], right_status[80];
+    char left_status[100], right_status[100];
 
-    // escape sequences bold mode text
-    int left_len =
-        snprintf(left_status, sizeof(left_status),
-                 "\x1b[1;7m%s\x1b[0;7m %.20s %s", editor_state.mode->name,
-                 editor_state.filename ? editor_state.filename : "[Unnamed]",
-                 editor_state.modified ? "[Modified]" : "");
-    int escape_sequence_char_count = 12;
+    // the length of the buffers in memory
+    int left_len = 0, right_len = 0;
 
+    // the rendered length of the buffers (no escape code characters)
+    int left_render_len = 0, right_render_len = 0;
+
+    // bold & invert
+    editor_add_to_status_bar_buffer(left_status, sizeof(left_status), &left_len,
+                                    &left_render_len, "\x1b[1;7m");
+    // mode name
+    editor_add_to_status_bar_buffer(left_status, sizeof(left_status), &left_len,
+                                    &left_render_len, "%s",
+                                    editor_state.mode->name);
+    // just invert
+    editor_add_to_status_bar_buffer(left_status, sizeof(left_status), &left_len,
+                                    &left_render_len, "\x1b[0;7m");
+    // find string
+    if (editor_state.mode == &find_mode) {
+        editor_add_to_status_bar_buffer(left_status, sizeof(left_status),
+                                        &left_len, &left_render_len, " ('%s')",
+                                        editor_state.find_state.string);
+    }
+    // filename
+    editor_add_to_status_bar_buffer(
+        left_status, sizeof(left_status), &left_len, &left_render_len, " %s",
+        editor_state.filename ? editor_state.filename : "[Unnamed]");
+
+    // modified
+    editor_add_to_status_bar_buffer(left_status, sizeof(left_status), &left_len,
+                                    &left_render_len, "%s",
+                                    editor_state.modified ? " [Modified]" : "");
+
+    // match index/number of matches
+    if (editor_state.mode == &find_mode) {
+        editor_add_to_status_bar_buffer(
+            right_status, sizeof(right_status), &right_len, &right_render_len,
+            "[%d/%d] ", editor_state.find_state.match_index + 1,
+            editor_state.find_state.matches_count);
+    }
+
+    // row/col positions
+    editor_add_to_status_bar_buffer(
+        right_status, sizeof(right_status), &right_len, &right_render_len,
+        "%d/%d, %d/%d", editor_state.cursor_y + 1, editor_state.num_rows,
+        editor_state.cursor_x + 1,
+        editor_state.rows[editor_state.cursor_y].size);
+
+    // scroll percentage
     char scroll_percent[4]; // need to take null character (\0) into account
     get_scroll_percentage(scroll_percent, sizeof(scroll_percent));
+    editor_add_to_status_bar_buffer(right_status, sizeof(right_status),
+                                    &right_len, &right_render_len, " (%s)",
+                                    scroll_percent);
 
-    int right_len =
-        snprintf(right_status, sizeof(right_status), "%d/%d, %d/%d (%s)",
-                 editor_state.cursor_y + 1, editor_state.num_rows,
-                 editor_state.cursor_x + 1,
-                 editor_state.rows[editor_state.cursor_y].size, scroll_percent);
+    // calculate padding between left and right status sections
 
-    if (left_len > editor_state.screen_cols) {
-        left_len = editor_state.screen_cols;
+    if (left_render_len > editor_state.screen_cols) {
+        left_render_len = editor_state.screen_cols;
     }
+
     ab_append(ab, left_status, left_len);
 
-    left_len -= escape_sequence_char_count;
-
-    while (left_len < editor_state.screen_cols) {
-        if (editor_state.screen_cols - left_len == right_len) {
+    while (left_render_len < editor_state.screen_cols) {
+        if (editor_state.screen_cols - left_render_len == right_render_len) {
             ab_append(ab, right_status, right_len);
             break;
         } else {
             ab_append(ab, " ", 1);
-            left_len++;
+            left_render_len++;
         }
     }
 
