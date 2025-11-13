@@ -21,7 +21,9 @@ void find_mode_entry(void *data) {
     fs->string = mode_data->string;
 
     int matches_count;
-    FindMatch *matches = find_matches(fs->string, &matches_count);
+    char *(*search_fn)(const char *, const char *) = mode_data->case_insensitive ? strcasestr : strstr;
+
+    FindMatch *matches = find_matches(fs->string, &matches_count, search_fn);
 
     if (matches == NULL) {
         editor_set_status_message("No match found");
@@ -50,7 +52,6 @@ void find_mode_entry(void *data) {
 }
 
 void find_mode_input(int input) {
-
     EditorFindState *fs = &editor_state.find_state;
 
     switch (input) {
@@ -70,11 +71,15 @@ void find_mode_input(int input) {
 
     // (vertically) centre view
     case 'c': {
-        // int buffer_rows = editor_state.screen_rows - 2;
-        // if (editor_state.num_rows > buffer_rows) {
-        //     editor_state.row_scroll_offset =
-        //         MAX(editor_state.find_state.cursor_y - (buffer_rows / 2), 0);
-        // }
+        int buffer_rows = editor_state.screen_rows - 2;
+        if (editor_state.num_rows > buffer_rows) {
+            editor_state.row_scroll_offset =
+                MAX(editor_state.find_state
+                            .matches[editor_state.find_state.match_index]
+                            .row -
+                        (buffer_rows / 2),
+                    0);
+        }
         break;
     }
 
@@ -107,7 +112,9 @@ void find_mode_exit(void) {
     editor_state.find_state.match_index = -1;
 }
 
-FindMatch *find_matches(const char *string, int *count) {
+FindMatch *find_matches(const char *string, int *count,
+                        char *(*search_fn)(const char *, const char *)) {
+
     int capacity = 2; // initial memory allocation for 2 FindMatch structs
     int matches_count = 0;
 
@@ -117,7 +124,7 @@ FindMatch *find_matches(const char *string, int *count) {
         int col = 0;
 
         while (true) {
-            char *match = strstr(&editor_state.rows[row].chars[col], string);
+            char *match = search_fn(&editor_state.rows[row].chars[col], string);
 
             if (match == NULL) { break; }
 

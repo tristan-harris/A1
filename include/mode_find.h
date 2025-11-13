@@ -1,7 +1,10 @@
 #pragma once
 
+#include <stdbool.h>
+
 typedef struct {
     char *string;
+    bool case_insensitive;
 } FindModeData;
 
 typedef struct {
@@ -19,5 +22,5 @@ typedef struct {
 void find_mode_entry(void *data);
 void find_mode_input(int input);
 void find_mode_exit(void);
-// int editor_find(void);
-FindMatch *find_matches(const char *string, int *count);
+FindMatch *find_matches(const char *string, int *count,
+                        char *(*search_fn)(const char *, const char *));

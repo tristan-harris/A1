@@ -13,8 +13,12 @@
 
 void editor_refresh_screen(void) {
 
-    // +1 for padding between line number and text
-    editor_state.num_col_width = num_digits(editor_state.num_rows) + 1;
+    if (editor_state.options.line_numbers) {
+        // +1 for padding between line number and text
+        editor_state.num_col_width = num_digits(editor_state.num_rows) + 1;
+    } else {
+        editor_state.num_col_width = 0;
+    }
 
     editor_scroll_render_update();
 
@@ -153,12 +157,15 @@ void editor_draw_rows(AppendBuffer *ab) {
         if (filerow >= editor_state.num_rows) {
             ab_append(ab, "~", 1);
         } else {
-            // line number
-            ab_append(ab, "\x1b[2m", 4); // dim
-            int num_len = snprintf(num_col_buf, sizeof(num_col_buf), "%*d ",
-                                   editor_state.num_col_width - 1, filerow + 1);
-            ab_append(ab, num_col_buf, num_len);
-            ab_append(ab, "\x1b[m", 3); // un-dim (reset formatting)
+            // line numbers
+            if (editor_state.options.line_numbers) {
+                ab_append(ab, "\x1b[2m", 4); // dim
+                int num_len =
+                    snprintf(num_col_buf, sizeof(num_col_buf), "%*d ",
+                             editor_state.num_col_width - 1, filerow + 1);
+                ab_append(ab, num_col_buf, num_len);
+                ab_append(ab, "\x1b[m", 3); // un-dim (reset formatting)
+            }
 
             int line_len = editor_state.rows[filerow].render_size -
                            editor_state.col_scroll_offset;

@@ -84,7 +84,30 @@ void find_command(char **words, int count) {
         transition_mode(&normal_mode, NULL);
         return;
     }
-    FindModeData data = {.string = strdup(words[1])};
+
+    bool case_insensitive;
+
+    // if 'i' or 'I' not specified, used configured default
+    if (count == 2) {
+        case_insensitive = editor_state.options.case_insensitive_search;
+    }
+    // else get first letter of third word in command buffer
+    else {
+        switch (words[2][0]) {
+        case 'i':
+            case_insensitive = true;
+            break;
+        case 'I':
+            case_insensitive = false;
+            break;
+        default:
+            case_insensitive = editor_state.options.case_insensitive_search;
+            break;
+        }
+    }
+
+    FindModeData data = {.string = strdup(words[1]),
+                         .case_insensitive = case_insensitive};
     transition_mode(&find_mode, &data);
 }
 
