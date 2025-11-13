@@ -8,10 +8,6 @@ int editor_row_rx_to_cx(const EditorRow *row, const int rx);
 void get_scroll_percentage(char *buf, size_t size);
 char *editor_rows_to_string(int *buflen);
 
-// logging
-void log_message(const char *fmt, ...);
-void clear_log();
-
 // util
 char **split_string(const char *string, const char delim, int *count);
 int num_digits(int num);

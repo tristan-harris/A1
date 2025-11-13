@@ -9,9 +9,11 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 void editor_open(const char *filename) {
@@ -19,9 +21,7 @@ void editor_open(const char *filename) {
     editor_state.filename = strdup(filename);
 
     FILE *fp = fopen(filename, "r");
-    if (!fp) {
-        die("fopen");
-    }
+    if (!fp) { die("fopen"); }
 
     char *line = NULL;
     size_t line_cap = 0;
@@ -69,4 +69,27 @@ void editor_save(void) {
 
     free(buf);
     editor_set_status_message("Cannot save! I/O error: %s", strerror(errno));
+}
+
+void log_message(const char *fmt, ...) {
+    FILE *file = fopen("a1.log", "a");
+
+    // timestamp
+    time_t now = time(NULL);
+    struct tm *time = localtime(&now);
+    fprintf(file, "[%02d:%02d:%02d] ", time->tm_hour, time->tm_min,
+            time->tm_sec);
+
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(file, fmt, args);
+    va_end(args);
+
+    fputc('\n', file);
+    fclose(file);
+}
+
+void clear_log() {
+    FILE *file = fopen("a1.log", "w");
+    fclose(file);
 }
