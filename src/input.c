@@ -105,7 +105,7 @@ char *editor_prompt(const char *prompt) {
             editor_set_status_message("");
             free(buf);
             return NULL;
-        } else if (c == '\r') {
+        } else if (c == ENTER) {
             if (buflen != 0) {
                 editor_set_status_message("");
                 return buf;

@@ -88,20 +88,31 @@ void editor_page_scroll(EditorDirection dir, bool half) {
 }
 
 void editor_scroll_render_update(void) {
-    // update render_x
-    editor_state.render_x = editor_row_cx_to_rx(
-        &editor_state.rows[editor_state.cursor_y], editor_state.cursor_x);
+    int y_position;
+
+    // update render_x and get y_position based on mode
+    if (editor_state.mode == &find_mode) {
+        FindMatch *fm = &editor_state.find_state
+                             .matches[editor_state.find_state.match_index];
+        editor_state.render_x =
+            editor_row_cx_to_rx(&editor_state.rows[fm->row], fm->col);
+        y_position = fm->row;
+    } else {
+        editor_state.render_x = editor_row_cx_to_rx(
+            &editor_state.rows[editor_state.cursor_y], editor_state.cursor_x);
+        y_position = editor_state.cursor_y;
+    }
 
     // if scrolled up
-    if (editor_state.cursor_y < editor_state.row_scroll_offset) {
-        editor_state.row_scroll_offset = editor_state.cursor_y;
+    if (y_position < editor_state.row_scroll_offset) {
+        editor_state.row_scroll_offset = y_position;
     }
 
     // if scrolled down
-    if (editor_state.cursor_y >=
+    if (y_position >=
         editor_state.row_scroll_offset + editor_state.screen_rows) {
         editor_state.row_scroll_offset =
-            editor_state.cursor_y - editor_state.screen_rows + 1;
+            y_position - editor_state.screen_rows + 1;
     }
 
     // if scrolled left
@@ -120,8 +131,20 @@ void editor_scroll_render_update(void) {
 }
 
 void editor_draw_rows(AppendBuffer *ab) {
-
     char num_col_buf[15];
+
+    bool block_cursor =
+        editor_state.mode == &normal_mode || editor_state.mode == &find_mode;
+
+    int block_cursor_y;
+
+    if (editor_state.mode == &normal_mode) {
+        block_cursor_y = editor_state.cursor_y;
+    } else if (editor_state.mode == &find_mode) {
+        block_cursor_y =
+            editor_state.find_state.matches[editor_state.find_state.match_index]
+                .row;
+    }
 
     for (int y = 0; y < editor_state.screen_rows; y++) {
         int filerow = y + editor_state.row_scroll_offset;
@@ -149,21 +172,16 @@ void editor_draw_rows(AppendBuffer *ab) {
             if (line_len < 0) { line_len = 0; }
 
             // draw block cursor by inverting cell at cursor
-            if (filerow == editor_state.cursor_y &&
-                editor_state.mode == &normal_mode) {
+            if (block_cursor && filerow == block_cursor_y) {
                 if (line_len == 0) {
                     // if blank line still draw block character
                     ab_append(ab, "\x1b[7m \x1b[m", 8);
                 } else {
-                    int left_len =
-                        editor_state.render_x - editor_state.col_scroll_offset;
-
-                    // if (left_len + 1 > line_len) { left_len = line_len - 1; }
-
                     ab_append(ab,
                               &editor_state.rows[filerow]
                                    .render[editor_state.col_scroll_offset],
-                              left_len);
+                              editor_state.render_x -
+                                  editor_state.col_scroll_offset);
 
                     ab_append(ab, "\x1b[7m", 4); // invert colors
 

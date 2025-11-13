@@ -12,7 +12,7 @@ void insert_mode_entry(void *data) {
 
 void insert_mode_input(int input) {
     switch (input) {
-    case '\r':
+    case ENTER:
         editor_insert_newline();
         break;
 

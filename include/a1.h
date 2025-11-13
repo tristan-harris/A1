@@ -1,6 +1,8 @@
 #pragma once
 
 #include "modes.h"
+#include "mode_command.h"
+#include "mode_find.h"
 #include <stdbool.h>
 #include <termios.h>
 #include <time.h>
@@ -12,8 +14,9 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 typedef enum {
+    ENTER = 13, // carriage return (\r)
     ESCAPE = 27,
-    BACKSPACE = 127,
+    BACKSPACE = 127, // del
 
     // soft codes, not related to ASCII values
     ARROW_LEFT = 1000,
@@ -28,17 +31,6 @@ typedef enum {
 } EditorKey;
 
 typedef enum { DIR_UP, DIR_RIGHT, DIR_LEFT, DIR_DOWN } EditorDirection;
-
-typedef struct {
-    char buffer[100];
-    int cursor_x;
-} EditorCommandState;
-
-typedef struct {
-    char *string;
-    int cursor_x;
-    int cursor_y;
-} EditorFindState;
 
 typedef struct {
     int size;        // size of row (excluding null character)

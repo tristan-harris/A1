@@ -15,6 +15,7 @@
 void command_mode_entry(void *data) {
     // write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
     dprintf(STDOUT_FILENO, "\x1b[?25h"); // show cursor
+    editor_state.status_msg[0] = '\0'; // clear status message
 
     if (data == NULL) {
         editor_state.command_state.buffer[0] = '\0';
@@ -95,7 +96,7 @@ void goto_command(char **words, int count) {
     }
 
     int line_num = atoi(words[1]);
-    if (line_num <= 0 || line_num >= editor_state.num_rows) {
+    if (line_num <= 0 || line_num > editor_state.num_rows) {
         editor_set_status_message("Invalid line number");
         transition_mode(&normal_mode, NULL);
         return;

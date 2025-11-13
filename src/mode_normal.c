@@ -8,6 +8,7 @@
 #include "output.h"
 #include "terminal.h"
 #include "util.h"
+#include <sys/param.h>
 #include <unistd.h>
 
 void normal_mode_entry(void *data) {
@@ -83,6 +84,16 @@ void normal_mode_input(int input) {
         editor_set_cursor_x(row->size);
         break;
 
+    // (vertically) centre view
+    case 'c': {
+        int buffer_rows = editor_state.screen_rows - 2;
+        if (editor_state.num_rows > buffer_rows) {
+            editor_state.row_scroll_offset =
+                MAX(editor_state.cursor_y - (buffer_rows / 2), 0);
+        }
+        break;
+    }
+
     // delete line
     case 'd':
         if (editor_state.num_rows > 1) {
@@ -138,15 +149,19 @@ void normal_mode_input(int input) {
 
     // basic movement
     case 'h':
+    case ARROW_LEFT:
         editor_move_cursor(DIR_LEFT);
         break;
     case 'j':
+    case ARROW_DOWN:
         editor_move_cursor(DIR_DOWN);
         break;
     case 'k':
+    case ARROW_UP:
         editor_move_cursor(DIR_UP);
         break;
     case 'l':
+    case ARROW_RIGHT:
         editor_move_cursor(DIR_RIGHT);
         break;
 

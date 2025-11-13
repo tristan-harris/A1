@@ -27,8 +27,9 @@ void init_editor(void) {
     editor_state.rows = NULL;
 
     editor_state.find_state.string = NULL;
-    editor_state.find_state.cursor_x = 0;
-    editor_state.find_state.cursor_y = 0;
+    editor_state.find_state.matches = NULL;
+    editor_state.find_state.matches_count = -1;
+    editor_state.find_state.match_index = -1;
 
     editor_state.modified = false;
     editor_state.mode = NULL;

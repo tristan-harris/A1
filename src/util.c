@@ -183,10 +183,8 @@ int num_digits(int num) {
 }
 
 bool is_string_integer(char *string) {
-  for (int i = 0; i < strlen(string); i++) {
-    if (string[i] < '0' || string[i] > '9') {
-      return false;
+    for (int i = 0; i < (int)strlen(string); i++) {
+        if (string[i] < '0' || string[i] > '9') { return false; }
     }
-  }
-  return true;
+    return true;
 }
