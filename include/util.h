@@ -11,4 +11,6 @@ char *editor_rows_to_string(int *buflen);
 // util
 char **split_string(const char *string, const char delim, int *count);
 int num_digits(int num);
-bool is_string_integer(char *string);
+bool is_string_integer(const char *string);
+bool parse_bool(const char *string, bool *valid);
+int parse_int(const char *string, bool *valid);

@@ -1,6 +1,20 @@
 #pragma once
 
-typedef enum { CMD_SAVE, CMD_FIND, CMD_GOTO, CMD_UNKNOWN } EditorCommandType;
+typedef enum {
+    CMD_SAVE,
+    CMD_FIND,
+    CMD_GOTO,
+    CMD_SET,
+    CMD_UNKNOWN
+} EditorCommandType;
+
+typedef enum {
+    OPTION_CASE_INSENSITIVE_DEFAULT,
+    OPTION_LINE_NUMBERS,
+    OPTION_TAB_CHARACTER,
+    OPTION_TAB_STOP,
+    OPTION_UNKNOWN
+} EditorOptionType;
 
 typedef struct {
     char *prompt;

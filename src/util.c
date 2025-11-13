@@ -39,9 +39,8 @@ int editor_row_rx_to_cx(const EditorRow *row, const int rx) {
 void get_scroll_percentage(char *buf, size_t size) {
     if (editor_state.row_scroll_offset == 0) {
         strncpy(buf, "Top", size);
-    }
-    else if (editor_state.num_rows - editor_state.screen_rows ==
-             editor_state.row_scroll_offset) {
+    } else if (editor_state.num_rows - editor_state.screen_rows ==
+               editor_state.row_scroll_offset) {
         strncpy(buf, "Bot", size);
     } else {
         double percentage =
@@ -156,9 +155,37 @@ int num_digits(int num) {
     return digits;
 }
 
-bool is_string_integer(char *string) {
+bool is_string_integer(const char *string) {
     for (int i = 0; i < (int)strlen(string); i++) {
         if (string[i] < '0' || string[i] > '9') { return false; }
     }
     return true;
+}
+
+bool parse_bool(const char *string, bool *valid) {
+    *valid = true;
+    if (strcmp(string, "true") == 0) { return true; }
+    if (strcmp(string, "false") == 0) { return false; }
+    if (strcmp(string, "1") == 0) { return true; }
+    if (strcmp(string, "0") == 0) { return false; }
+
+    *valid = false;
+    return false;
+}
+
+int parse_int(const char *string, bool *valid) {
+    if (!is_string_integer(string)) {
+        *valid = false;
+        return -1;
+    }
+
+    int num = 0;
+    *valid = true;
+
+    for (int i = 0; i < (int)strlen(string); i++) {
+        if (i != 0) { num *= 10; }
+        num += string[i] - 48;
+    }
+
+    return num;
 }

@@ -202,6 +202,12 @@ void normal_mode_input(int input) {
     case 's':
         editor_save();
         break;
+    // enter command mode with 'set ' prompt
+    case 'S': {
+        CommandModeData data = {.prompt = "set "};
+        transition_mode(&command_mode, &data);
+        break;
+    }
 
     // move to visible top/middle/bottom
     case 'T': // top

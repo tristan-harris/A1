@@ -1,8 +1,8 @@
 #pragma once
 
-#include "modes.h"
 #include "mode_command.h"
 #include "mode_find.h"
+#include "modes.h"
 #include <stdbool.h>
 #include <termios.h>
 #include <time.h>
@@ -40,6 +40,13 @@ typedef struct {
 } EditorRow;
 
 typedef struct {
+    bool case_insensitive_search; // determines default config for find mode
+    bool line_numbers;            // whether to show line numbers
+    bool tab_character; // whether to insert \t character when TAB key pressed
+    int tab_stop;       // indentation amount
+} EditorOptions;
+
+typedef struct {
     int cursor_x; // actual cursor x position
     int cursor_y; // actual cursor y position
     int target_x; // intended x position of cursor based on previous line(s)
@@ -59,6 +66,7 @@ typedef struct {
     char status_msg[80];
     time_t status_msg_time;
     struct termios original_termios;
+    EditorOptions options;
 } EditorState;
 
 extern EditorState editor_state;
