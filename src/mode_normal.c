@@ -165,6 +165,19 @@ void normal_mode_input(int input) {
         editor_move_cursor(DIR_RIGHT);
         break;
 
+    // insert new lines above/below
+    case 'K':
+        editor_insert_row(editor_state.cursor_y, "", 0);
+        editor_set_cursor_x(0);
+        transition_mode(&insert_mode, NULL);
+        break;
+    case 'J':
+        editor_insert_row(editor_state.cursor_y + 1, "", 0);
+        editor_set_cursor_x(0);
+        editor_set_cursor_y(editor_state.cursor_y + 1);
+        transition_mode(&insert_mode, NULL);
+        break;
+
     // enter command with 'goto ' prompt
     case 'n': {
         CommandModeData data = {.prompt = "goto "};

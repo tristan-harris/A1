@@ -7,9 +7,7 @@
 void editor_update_row(EditorRow *row) {
     int tabs = 0;
     for (int i = 0; i < row->size; i++) {
-        if (row->chars[i] == '\t') {
-            tabs++;
-        }
+        if (row->chars[i] == '\t') { tabs++; }
     }
 
     free(row->render);
@@ -31,12 +29,12 @@ void editor_update_row(EditorRow *row) {
 }
 
 void editor_insert_row(int row_idx, const char *string, size_t len) {
-    if (row_idx < 0 || row_idx > editor_state.num_rows) {
-        return;
-    }
+    if (row_idx < 0 || row_idx > editor_state.num_rows) { return; }
 
     editor_state.rows = realloc(
         editor_state.rows, sizeof(EditorRow) * (editor_state.num_rows + 1));
+
+    // shift every following row
     memmove(&editor_state.rows[row_idx + 1], &editor_state.rows[row_idx],
             sizeof(EditorRow) * (editor_state.num_rows - row_idx));
 
@@ -59,9 +57,7 @@ void editor_free_row(const EditorRow *row) {
 }
 
 void editor_del_row(int row_idx) {
-    if (row_idx < 0 || row_idx >= editor_state.num_rows) {
-        return;
-    }
+    if (row_idx < 0 || row_idx >= editor_state.num_rows) { return; }
     editor_free_row(&editor_state.rows[row_idx]);
     memmove(&editor_state.rows[row_idx], &editor_state.rows[row_idx + 1],
             sizeof(EditorRow) * (editor_state.num_rows - row_idx - 1));
@@ -70,9 +66,7 @@ void editor_del_row(int row_idx) {
 }
 
 void editor_row_insert_char(EditorRow *row, int col_idx, int c) {
-    if (col_idx < 0 || col_idx > row->size) {
-        col_idx = row->size;
-    }
+    if (col_idx < 0 || col_idx > row->size) { col_idx = row->size; }
     row->chars = realloc(row->chars, row->size + 2);
     memmove(&row->chars[col_idx + 1], &row->chars[col_idx],
             row->size - col_idx + 1);
@@ -92,9 +86,7 @@ void editor_row_append_string(EditorRow *row, const char *string, size_t len) {
 }
 
 void editor_row_del_char(EditorRow *row, int col_idx) {
-    if (col_idx < 0 || col_idx >= row->size) {
-        return;
-    }
+    if (col_idx < 0 || col_idx >= row->size) { return; }
     memmove(&row->chars[col_idx], &row->chars[col_idx + 1],
             row->size - col_idx);
     row->size--;
@@ -124,33 +116,26 @@ void editor_insert_char(int c) {
 }
 
 void editor_insert_newline(void) {
-    if (editor_state.cursor_x == 0) {
-        editor_insert_row(editor_state.cursor_y, "", 0);
-    } else {
-        EditorRow *row = &editor_state.rows[editor_state.cursor_y];
-        editor_insert_row(editor_state.cursor_y + 1,
-                          &row->chars[editor_state.cursor_x],
-                          row->size - editor_state.cursor_x);
+    EditorRow *row = &editor_state.rows[editor_state.cursor_y];
+    editor_insert_row(editor_state.cursor_y + 1,
+                      &row->chars[editor_state.cursor_x],
+                      row->size - editor_state.cursor_x);
 
-        // pointer reassignment required because realloc() in
-        // editor_insert_row() may move memory and invalidate the pointer
-        row = &editor_state.rows[editor_state.cursor_y];
+    // pointer reassignment required because realloc() in
+    // editor_insert_row() may move memory and invalidate the pointer
+    row = &editor_state.rows[editor_state.cursor_y];
 
-        row->size = editor_state.cursor_x;
-        row->chars[row->size] = '\0';
-        editor_update_row(row);
-    }
+    row->size = editor_state.cursor_x;
+    row->chars[row->size] = '\0';
+    editor_update_row(row);
+
     editor_state.cursor_y++;
     editor_state.cursor_x = 0;
 }
 
 void editor_del_char(void) {
-    if (editor_state.cursor_y == editor_state.num_rows) {
-        return;
-    }
-    if (editor_state.cursor_x == 0 && editor_state.cursor_y == 0) {
-        return;
-    }
+    if (editor_state.cursor_y == editor_state.num_rows) { return; }
+    if (editor_state.cursor_x == 0 && editor_state.cursor_y == 0) { return; }
 
     EditorRow *row = &editor_state.rows[editor_state.cursor_y];
     if (editor_state.cursor_x > 0) {
