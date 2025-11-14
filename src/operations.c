@@ -5,19 +5,21 @@
 #include <string.h>
 
 void editor_update_row(EditorRow *row) {
+    int tab_stop = editor_state.options.tab_stop;
     int tabs = 0;
+
     for (int i = 0; i < row->size; i++) {
-        if (row->chars[i] == '\t') { tabs++; }
+        if (row->chars[i] == TAB) { tabs++; }
     }
 
     free(row->render);
-    row->render = malloc(row->size + (tabs * (A1_TAB_STOP - 1)) + 1);
+    row->render = malloc(row->size + (tabs * (tab_stop - 1)) + 1);
 
     int idx = 0;
     for (int i = 0; i < row->size; i++) {
-        if (row->chars[i] == '\t') {
+        if (row->chars[i] == TAB) {
             row->render[idx++] = ' ';
-            while (idx % A1_TAB_STOP != 0) {
+            while (idx % tab_stop != 0) {
                 row->render[idx++] = ' ';
             }
         } else {

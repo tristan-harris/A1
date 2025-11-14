@@ -9,9 +9,11 @@
 // convert cursor x position to equivalent rendered cursor x position
 int editor_row_cx_to_rx(const EditorRow *row, int cx) {
     int rx = 0;
+    int tab_stop = editor_state.options.tab_stop;
+
     for (int i = 0; i < cx; i++) {
-        if (row->chars[i] == '\t') {
-            rx += (A1_TAB_STOP - 1) - (rx % A1_TAB_STOP);
+        if (row->chars[i] == TAB) {
+            rx += (tab_stop - 1) - (rx % tab_stop);
         }
         rx++;
     }
@@ -20,12 +22,14 @@ int editor_row_cx_to_rx(const EditorRow *row, int cx) {
 
 // convert rendered cursor x position to equivalent cursor x position
 int editor_row_rx_to_cx(const EditorRow *row, const int rx) {
+    int tab_stop = editor_state.options.tab_stop;
+
     int current_rx = 0;
     int cx;
 
     for (cx = 0; cx < row->size; cx++) {
-        if (row->chars[cx] == '\t') {
-            current_rx += (A1_TAB_STOP - 1) - (current_rx % A1_TAB_STOP);
+        if (row->chars[cx] == TAB) {
+            current_rx += (tab_stop - 1) - (current_rx % tab_stop);
         }
         current_rx++;
 
@@ -69,6 +73,38 @@ char *editor_rows_to_string(int *buflen) {
     }
 
     return buf;
+}
+
+// returns number of characters to delete to the left of cursor
+// will return larger number if there are multiple spaces
+int get_backspace_deletion_count(const EditorRow *row, int cursor_x) {
+    if (cursor_x < 2) { return cursor_x; }
+
+    int count = 0;
+    int i = cursor_x - 1;
+
+    while (true) {
+        // if reached end
+        if (i < 0) { break; }
+
+        // if reached non-space character
+        if (row->chars[i] != SPACE) { break; }
+
+        // check if at tab stop increment
+        if ((i + editor_state.options.tab_stop) %
+                editor_state.options.tab_stop ==
+            0) {
+            count++;
+            break;
+        }
+
+        i--;
+        count++;
+    }
+
+    if (count == 0) { count = 1; }
+
+    return count;
 }
 
 // returns array of strings separated by delimiter (no including delimiter)

@@ -7,15 +7,15 @@
 #include <termios.h>
 #include <time.h>
 
-#define A1_TAB_STOP 4
-
 // strips every bit beyond fifth
 // e.g. q (113) and Q (81) become C-Q/DC1 (17)
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 typedef enum {
+    TAB = 9, // horizontal tab (\t)
     ENTER = 13, // carriage return (\r)
     ESCAPE = 27,
+    SPACE = 32,
     BACKSPACE = 127, // del
 
     // soft codes, not related to ASCII values

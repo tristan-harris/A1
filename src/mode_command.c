@@ -5,6 +5,7 @@
 #include "input.h"
 #include "mode_command.h"
 #include "modes.h"
+#include "operations.h"
 #include "output.h"
 #include "util.h"
 #include <stdio.h>
@@ -180,7 +181,17 @@ void set_command(char **words, int count) {
     }
     case OPTION_TAB_STOP: {
         int option_value = parse_int(words[2], &is_valid);
-        if (is_valid) { editor_state.options.tab_stop = option_value; }
+        if (is_valid) {
+            if (option_value < 1) {
+                editor_set_status_message("Invalid value of '%d' for 'tabstop'",
+                                          option_value);
+                break;
+            }
+            editor_state.options.tab_stop = option_value;
+            for (int i = 0; i < editor_state.num_rows; i++) {
+                editor_update_row(&editor_state.rows[i]);
+            }
+        }
         break;
     }
     case OPTION_UNKNOWN:
@@ -188,8 +199,8 @@ void set_command(char **words, int count) {
     }
 
     if (!is_valid) {
-        editor_set_status_message("Invalid value of '%s' for option", words[2],
-                                  parse_option(words[1]));
+        editor_set_status_message("Invalid value of '%s' for '%s'", words[2],
+                                  words[1]);
     }
 
     transition_mode(&normal_mode, NULL);

@@ -178,7 +178,7 @@ void editor_move_cursor(EditorDirection dir) {
 int editor_jump_non_whitespace(EditorRow *row) {
     int i = 0;
     while (i < row->size) {
-        if (row->chars[i] != ' ' && row->chars[i] != '\t') {
+        if (row->chars[i] != SPACE && row->chars[i] != TAB) {
             editor_set_cursor_x(i);
             return i;
         }

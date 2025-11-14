@@ -3,6 +3,7 @@
 #include "input.h"
 #include "operations.h"
 #include "terminal.h"
+#include "util.h"
 #include <unistd.h>
 
 void insert_mode_entry(void *data) {
@@ -16,6 +17,22 @@ void insert_mode_input(int input) {
         editor_insert_newline();
         break;
 
+    case TAB: {
+        if (editor_state.options.tab_character) {
+            editor_insert_char(input);
+            break;
+        }
+
+        // if not inserting tab character, insert spaces to next tab stop
+        do {
+            editor_insert_char(' '); // increments cursor_x automatically
+        } while ((editor_state.cursor_x + editor_state.options.tab_stop) %
+                     editor_state.options.tab_stop !=
+                 0);
+
+        break;
+    }
+
     case HOME_KEY:
         editor_set_cursor_x(0);
         break;
@@ -25,9 +42,17 @@ void insert_mode_input(int input) {
         break;
 
     case BACKSPACE:
-    case CTRL_KEY('h'):
+    case CTRL_KEY('h'): {
+        EditorRow *row = &editor_state.rows[editor_state.cursor_y];
+        int count = get_backspace_deletion_count(row, editor_state.cursor_x);
+        for (int i = 0; i < count; i++) {
+            editor_del_char();
+        }
+        break;
+    }
+
     case DEL_KEY:
-        if (input == DEL_KEY) { editor_move_cursor(DIR_RIGHT); }
+        editor_move_cursor(DIR_RIGHT);
         editor_del_char();
         break;
 
@@ -67,7 +92,8 @@ void insert_mode_input(int input) {
         break;
 
     default:
-        editor_insert_char(input);
+        // only allow ASCII character input
+        if (input >= SPACE && input <= '~') { editor_insert_char(input); }
         break;
     }
 }

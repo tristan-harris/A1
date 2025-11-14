@@ -54,7 +54,7 @@ void normal_mode_input(int input) {
         break;
 
     // enter command mode
-    case ' ':
+    case SPACE:
         transition_mode(&command_mode, NULL);
         break;
 
