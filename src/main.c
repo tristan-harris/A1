@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
     signal(SIGWINCH, handle_window_change); // respond to window change signal
 
     init_editor();
+    apply_config_file();
 
     // terminal
     enable_raw_mode();
@@ -66,7 +67,7 @@ int main(int argc, char *argv[]) {
     transition_mode(&normal_mode, NULL); // start editor in normal mode
 
     if (argc >= 2) {
-        editor_open(argv[1]);
+        open_text_file(argv[1]);
     } else {
         editor_insert_row(0, "", 0);   // empty new file
         editor_state.modified = false; // override insert row setting modified

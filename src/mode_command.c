@@ -40,7 +40,7 @@ void command_mode_input(int input) {
         break;
 
     case ENTER:
-        execute_command();
+        execute_command(editor_state.command_state.buffer);
         break;
 
     case BACKSPACE:
@@ -79,11 +79,11 @@ void command_mode_exit(void) {
     //         editor_state.cursor_x); // move cursor
 }
 
-void find_command(char **words, int count) {
+bool find_command(char **words, int count) {
     if (count < 2) {
         editor_set_status_message("Search text not specified");
         transition_mode(&normal_mode, NULL);
-        return;
+        return false;
     }
 
     bool case_insensitive;
@@ -110,24 +110,29 @@ void find_command(char **words, int count) {
     FindModeData data = {.string = strdup(words[1]),
                          .case_insensitive = case_insensitive};
     transition_mode(&find_mode, &data);
+
+    return true;
 }
 
-void goto_command(char **words, int count) {
-    if (count < 2 || !is_string_integer(words[1])) {
+bool goto_command(char **words, int count) {
+    if (count < 2) {
         editor_set_status_message("Line number not specified");
         transition_mode(&normal_mode, NULL);
-        return;
+        return false;
     }
 
-    int line_num = atoi(words[1]);
-    if (line_num <= 0 || line_num > editor_state.num_rows) {
+    bool valid_num;
+    int line_num = parse_int(words[1], &valid_num);
+
+    if (!valid_num || line_num <= 0 || line_num > editor_state.num_rows) {
         editor_set_status_message("Invalid line number");
         transition_mode(&normal_mode, NULL);
-        return;
+        return false;
     }
 
     editor_set_cursor_y(line_num - 1);
     transition_mode(&normal_mode, NULL);
+    return true;
 }
 
 EditorOptionType parse_option(char *command) {
@@ -145,18 +150,57 @@ EditorOptionType parse_option(char *command) {
     return OPTION_UNKNOWN;
 }
 
-void set_command(char **words, int count) {
+bool get_command(char **words, int count) {
+    if (count < 2) {
+        editor_set_status_message("Missing option");
+        transition_mode(&normal_mode, NULL);
+        return false;
+    }
+
+    bool valid_command = true;
+
+    EditorOptionType option_type = parse_option(words[1]);
+
+    switch (option_type) {
+    case OPTION_CASE_INSENSITIVE_DEFAULT:
+        editor_set_status_message(
+            "%s=%s", words[1],
+            bool_to_str(editor_state.options.case_insensitive_search));
+        break;
+    case OPTION_LINE_NUMBERS:
+        editor_set_status_message(
+            "%s=%s", words[1], bool_to_str(editor_state.options.line_numbers));
+        break;
+    case OPTION_TAB_CHARACTER:
+        editor_set_status_message(
+            "%s=%s", words[1], bool_to_str(editor_state.options.tab_character));
+        break;
+    case OPTION_TAB_STOP:
+        editor_set_status_message("%s=%d", words[1],
+                                  editor_state.options.tab_stop);
+        break;
+    case OPTION_UNKNOWN:
+        valid_command = false;
+        editor_set_status_message("Unknown option '%s'", words[1]);
+        break;
+    }
+
+    transition_mode(&normal_mode, NULL);
+    return valid_command;
+}
+
+bool set_command(char **words, int count) {
     if (count < 3) {
         editor_set_status_message("Missing option or value");
         transition_mode(&normal_mode, NULL);
-        return;
+        return false;
     }
 
     EditorOptionType option_type = parse_option(words[1]);
     if (option_type == OPTION_UNKNOWN) {
         editor_set_status_message("Unknown option '%s'", words[1]);
         transition_mode(&normal_mode, NULL);
-        return;
+        return false;
     }
 
     bool is_valid;
@@ -185,6 +229,7 @@ void set_command(char **words, int count) {
             if (option_value < 1) {
                 editor_set_status_message("Invalid value of '%d' for 'tabstop'",
                                           option_value);
+                is_valid = false;
                 break;
             }
             editor_state.options.tab_stop = option_value;
@@ -195,6 +240,7 @@ void set_command(char **words, int count) {
         break;
     }
     case OPTION_UNKNOWN:
+        is_valid = false;
         break;
     }
 
@@ -204,47 +250,59 @@ void set_command(char **words, int count) {
     }
 
     transition_mode(&normal_mode, NULL);
+    return is_valid;
 }
 
 EditorCommandType parse_command(char *command) {
     if (strcmp(command, "save") == 0) { return CMD_SAVE; }
     if (strcmp(command, "find") == 0) { return CMD_FIND; }
     if (strcmp(command, "goto") == 0) { return CMD_GOTO; }
+    if (strcmp(command, "get") == 0) { return CMD_GET; }
     if (strcmp(command, "set") == 0) { return CMD_SET; }
     return CMD_UNKNOWN;
 }
 
-void execute_command(void) {
+bool execute_command(char *command_buffer) {
     int count;
-    char **words = split_string(editor_state.command_state.buffer, ' ', &count);
+    char **words = split_string(command_buffer, ' ', &count);
 
     if (words == NULL) {
         editor_set_status_message("Invalid input.");
         transition_mode(&normal_mode, NULL);
-        return;
+        return false;
     }
+
+    bool valid_command;
 
     switch (parse_command(words[0])) {
     case CMD_SAVE:
         transition_mode(&normal_mode, NULL);
-        editor_save();
+        save_text_file();
+        valid_command = true;
         break;
     case CMD_FIND:
-        find_command(words, count);
+        valid_command = find_command(words, count);
         break;
     case CMD_GOTO:
-        goto_command(words, count);
+        valid_command = goto_command(words, count);
+        break;
+    case CMD_GET:
+        valid_command = get_command(words, count);
         break;
     case CMD_SET:
-        set_command(words, count);
+        valid_command = set_command(words, count);
         break;
     default:
         editor_set_status_message("Unknown command");
         transition_mode(&normal_mode, NULL);
+        valid_command = false;
+        break;
     }
 
     for (int i = 0; i < count; i++) {
         free(words[i]);
     }
     free(words);
+
+    return valid_command;
 }

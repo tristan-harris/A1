@@ -5,3 +5,6 @@
 #define _DEFAULT_SOURCE
 
 #define A1_VERSION "0.0.1"
+
+#define A1_CONFIG_DIR "a1"
+#define A1_CONFIG_FILE "a1rc" // rc = run commands

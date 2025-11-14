@@ -200,7 +200,7 @@ void normal_mode_input(int input) {
 
     // save
     case 's':
-        editor_save();
+        save_text_file();
         break;
     // enter command mode with 'set ' prompt
     case 'S': {

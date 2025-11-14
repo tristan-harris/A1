@@ -2,6 +2,7 @@
 
 #include "a1.h"
 #include "input.h"
+#include "mode_command.h"
 #include "operations.h"
 #include "output.h"
 #include "terminal.h"
@@ -16,7 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 
-void editor_open(const char *filename) {
+void open_text_file(const char *filename) {
     free(editor_state.filename);
     editor_state.filename = strdup(filename);
 
@@ -39,7 +40,7 @@ void editor_open(const char *filename) {
     editor_state.modified = false;
 }
 
-void editor_save(void) {
+void save_text_file(void) {
     if (editor_state.filename == NULL) {
         editor_state.filename = editor_prompt("Save as: %s (ESC to cancel)");
         if (editor_state.filename == NULL) {
@@ -69,6 +70,60 @@ void editor_save(void) {
 
     free(buf);
     editor_set_status_message("Cannot save! I/O error: %s", strerror(errno));
+}
+
+// checks if $XDG_CONFIG_HOME is set before using $HOME
+char *get_config_file_path(void) {
+    char *xdg_cfg_dir = getenv("XDG_CONFIG_HOME");
+    char *home_dir = getenv("HOME");
+
+    char *file_path;
+
+    if (xdg_cfg_dir) {
+        asprintf(&file_path, "%s/%s/%s", xdg_cfg_dir, A1_CONFIG_DIR,
+                 A1_CONFIG_FILE);
+    } else if (home_dir) {
+        asprintf(&file_path, "%s/.config/%s/%s", home_dir, A1_CONFIG_DIR,
+                 A1_CONFIG_FILE);
+    } else {
+        editor_set_status_message("Cannot find config file, $HOME not set");
+        return NULL;
+    }
+
+    return file_path;
+}
+
+void apply_config_file(void) {
+    char *cfg_file_path = get_config_file_path();
+    if (!cfg_file_path) { return; }
+
+    FILE *cfg_file = fopen(cfg_file_path, "r");
+
+    if (!cfg_file) {
+        free(cfg_file_path);
+        return;
+    }
+
+    char line[1000];
+
+    while (fgets(line, sizeof(line), cfg_file)) {
+        line[strcspn(line, "\n")] = '\0'; // strip newline
+        line[strcspn(line, "#")] = '\0'; // strip comments
+
+        if (*line == '\0') { continue; }
+
+        // only run set commands
+        if (strncmp(line, "set", 3) == 0) {
+            bool valid_command = execute_command(line);
+            if (!valid_command) { break; }
+        } else {
+            editor_set_status_message("Invalid configuration command '%s'", line);
+            break;
+        }
+    }
+
+    fclose(cfg_file);
+    free(cfg_file_path);
 }
 
 void log_message(const char *fmt, ...) {

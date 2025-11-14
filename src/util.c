@@ -225,3 +225,7 @@ int parse_int(const char *string, bool *valid) {
 
     return num;
 }
+
+char *bool_to_str(const bool boolean) {
+    return boolean ? "true" : "false";
+}

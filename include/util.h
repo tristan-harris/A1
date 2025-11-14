@@ -15,3 +15,4 @@ int num_digits(int num);
 bool is_string_integer(const char *string);
 bool parse_bool(const char *string, bool *valid);
 int parse_int(const char *string, bool *valid);
+char *bool_to_str(const bool boolean);
