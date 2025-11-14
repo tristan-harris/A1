@@ -363,11 +363,60 @@ void editor_draw_welcome_text(void) {
     write(STDOUT_FILENO, "\x1b[1;1H", 6); // move cursor to top left
 }
 
-void editor_set_status_message(const char *fmt, ...) {
+void editor_clear_status_message(void) {
+    editor_state.status_msg[0] = '\0';
+}
+
+void editor_set_status_message(StatusMessageType msg_type, const char *fmt,
+                               ...) {
+    int sequence_written = 0;
+
+    switch (msg_type) {
+    case MSG_INFO:
+        // default text color
+        break;
+
+    case MSG_WARNING:
+        // yellow
+        sequence_written =
+            snprintf(editor_state.status_msg, sizeof(editor_state.status_msg),
+                     "\x1b[33m");
+        break;
+
+    case MSG_ERROR:
+        // red
+        sequence_written =
+            snprintf(editor_state.status_msg, sizeof(editor_state.status_msg),
+                     "\x1b[31m");
+        break;
+    }
+
+    // needed to add to end of status_msg
+    char *reset = "\x1b[0m";
+
+    // the space available for the message itself, guaranteeing space for the
+    // reset sequence
+    int msg_len_max =
+        sizeof(editor_state.status_msg) - sequence_written - strlen(reset);
+
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(editor_state.status_msg, sizeof(editor_state.status_msg), fmt,
-              ap);
+    int msg_written = vsnprintf(editor_state.status_msg + sequence_written,
+                                msg_len_max, fmt, ap);
     va_end(ap);
+
+    // if message longer than available buffer space
+    // add escape code at reserved space at end
+    if (msg_written > msg_len_max) {
+        snprintf(editor_state.status_msg +
+                     (sizeof(editor_state.status_msg) - strlen(reset) - 1),
+                 sizeof(editor_state.status_msg), "%s", reset);
+    }
+    // else add reset sequence after main message
+    else {
+        snprintf(editor_state.status_msg + sequence_written + msg_written,
+                 sizeof(editor_state.status_msg), "%s", reset);
+    }
+
     editor_state.status_msg_time = time(NULL);
 }

@@ -26,7 +26,7 @@ void find_mode_entry(void *data) {
     FindMatch *matches = find_matches(fs->string, &matches_count, search_fn);
 
     if (matches == NULL) {
-        editor_set_status_message("No match found");
+        editor_set_status_message(MSG_INFO, "No match found");
         transition_mode(&normal_mode, NULL);
         return;
     }

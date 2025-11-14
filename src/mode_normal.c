@@ -33,8 +33,8 @@ void normal_mode_input(int input) {
     // helpful message like in Neovim
     case CTRL_KEY('c'):
         editor_set_status_message(
-            "Press 'q' to quit after saving with 's', or 'Q' "
-            "to quit without saving.");
+            MSG_INFO, "Press 'q' to quit after saving with 's', or 'Q' "
+                      "to quit without saving.");
         break;
 
     // scroll down/up half page
@@ -188,7 +188,7 @@ void normal_mode_input(int input) {
     // quit unmodified file
     case 'q':
         if (editor_state.modified) {
-            editor_set_status_message("File has unsaved changes.");
+            editor_set_status_message(MSG_INFO, "File has unsaved changes.");
         } else {
             quit();
         }

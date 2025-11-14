@@ -1,13 +1,10 @@
 #include "config.h"
 
 #include "a1.h"
-#include "output.h"
 #include "terminal.h"
 #include "util.h"
 
-#include <ctype.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <sys/param.h>
 #include <unistd.h>
 
@@ -82,42 +79,6 @@ int editor_read_key(void) {
         return ESCAPE;
     } else {
         return c;
-    }
-}
-
-char *editor_prompt(const char *prompt) {
-    size_t bufsize = 128;
-    char *buf = malloc(bufsize);
-
-    size_t buflen = 0;
-    buf[0] = '\0';
-
-    while (true) {
-        editor_set_status_message(prompt, buf);
-        editor_refresh_screen();
-
-        int c = editor_read_key();
-        if (c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE) {
-            if (buflen != 0) {
-                buf[--buflen] = '\0';
-            }
-        } else if (c == ESCAPE) {
-            editor_set_status_message("");
-            free(buf);
-            return NULL;
-        } else if (c == ENTER) {
-            if (buflen != 0) {
-                editor_set_status_message("");
-                return buf;
-            }
-        } else if (!iscntrl(c) && c < 128) {
-            if (buflen == bufsize - 1) {
-                bufsize *= 2;
-                buf = realloc(buf, bufsize);
-            }
-            buf[buflen++] = c;
-            buf[buflen] = '\0';
-        }
     }
 }
 

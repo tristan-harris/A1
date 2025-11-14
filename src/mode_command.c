@@ -81,7 +81,7 @@ void command_mode_exit(void) {
 
 bool find_command(char **words, int count) {
     if (count < 2) {
-        editor_set_status_message("Search text not specified");
+        editor_set_status_message(MSG_WARNING, "Search text not specified");
         transition_mode(&normal_mode, NULL);
         return false;
     }
@@ -116,7 +116,7 @@ bool find_command(char **words, int count) {
 
 bool goto_command(char **words, int count) {
     if (count < 2) {
-        editor_set_status_message("Line number not specified");
+        editor_set_status_message(MSG_WARNING, "Line number not specified");
         transition_mode(&normal_mode, NULL);
         return false;
     }
@@ -125,7 +125,7 @@ bool goto_command(char **words, int count) {
     int line_num = parse_int(words[1], &valid_num);
 
     if (!valid_num || line_num <= 0 || line_num > editor_state.num_rows) {
-        editor_set_status_message("Invalid line number");
+        editor_set_status_message(MSG_WARNING, "Invalid line number");
         transition_mode(&normal_mode, NULL);
         return false;
     }
@@ -152,7 +152,7 @@ EditorOptionType parse_option(char *command) {
 
 bool get_command(char **words, int count) {
     if (count < 2) {
-        editor_set_status_message("Missing option");
+        editor_set_status_message(MSG_WARNING, "Missing option");
         transition_mode(&normal_mode, NULL);
         return false;
     }
@@ -164,24 +164,26 @@ bool get_command(char **words, int count) {
     switch (option_type) {
     case OPTION_CASE_INSENSITIVE_DEFAULT:
         editor_set_status_message(
-            "%s=%s", words[1],
+            MSG_INFO, "%s=%s", words[1],
             bool_to_str(editor_state.options.case_insensitive_search));
         break;
     case OPTION_LINE_NUMBERS:
         editor_set_status_message(
-            "%s=%s", words[1], bool_to_str(editor_state.options.line_numbers));
+            MSG_INFO, "%s=%s", words[1],
+            bool_to_str(editor_state.options.line_numbers));
         break;
     case OPTION_TAB_CHARACTER:
         editor_set_status_message(
-            "%s=%s", words[1], bool_to_str(editor_state.options.tab_character));
+            MSG_INFO, "%s=%s", words[1],
+            bool_to_str(editor_state.options.tab_character));
         break;
     case OPTION_TAB_STOP:
-        editor_set_status_message("%s=%d", words[1],
+        editor_set_status_message(MSG_INFO, "%s=%d", words[1],
                                   editor_state.options.tab_stop);
         break;
     case OPTION_UNKNOWN:
         valid_command = false;
-        editor_set_status_message("Unknown option '%s'", words[1]);
+        editor_set_status_message(MSG_WARNING, "Unknown option '%s'", words[1]);
         break;
     }
 
@@ -191,14 +193,14 @@ bool get_command(char **words, int count) {
 
 bool set_command(char **words, int count) {
     if (count < 3) {
-        editor_set_status_message("Missing option or value");
+        editor_set_status_message(MSG_WARNING, "Missing option or value");
         transition_mode(&normal_mode, NULL);
         return false;
     }
 
     EditorOptionType option_type = parse_option(words[1]);
     if (option_type == OPTION_UNKNOWN) {
-        editor_set_status_message("Unknown option '%s'", words[1]);
+        editor_set_status_message(MSG_WARNING, "Unknown option '%s'", words[1]);
         transition_mode(&normal_mode, NULL);
         return false;
     }
@@ -227,7 +229,8 @@ bool set_command(char **words, int count) {
         int option_value = parse_int(words[2], &is_valid);
         if (is_valid) {
             if (option_value < 1) {
-                editor_set_status_message("Invalid value of '%d' for 'tabstop'",
+                editor_set_status_message(MSG_WARNING,
+                                          "Invalid value of '%d' for 'tabstop'",
                                           option_value);
                 is_valid = false;
                 break;
@@ -245,8 +248,8 @@ bool set_command(char **words, int count) {
     }
 
     if (!is_valid) {
-        editor_set_status_message("Invalid value of '%s' for '%s'", words[2],
-                                  words[1]);
+        editor_set_status_message(MSG_WARNING, "Invalid value of '%s' for '%s'",
+                                  words[2], words[1]);
     }
 
     transition_mode(&normal_mode, NULL);
@@ -267,7 +270,7 @@ bool execute_command(char *command_buffer) {
     char **words = split_string(command_buffer, ' ', &count);
 
     if (words == NULL) {
-        editor_set_status_message("Invalid input.");
+        editor_set_status_message(MSG_WARNING, "Invalid input.");
         transition_mode(&normal_mode, NULL);
         return false;
     }
@@ -293,7 +296,7 @@ bool execute_command(char *command_buffer) {
         valid_command = set_command(words, count);
         break;
     default:
-        editor_set_status_message("Unknown command");
+        editor_set_status_message(MSG_WARNING, "Unknown command");
         transition_mode(&normal_mode, NULL);
         valid_command = false;
         break;

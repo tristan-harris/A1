@@ -12,9 +12,7 @@ int editor_row_cx_to_rx(const EditorRow *row, int cx) {
     int tab_stop = editor_state.options.tab_stop;
 
     for (int i = 0; i < cx; i++) {
-        if (row->chars[i] == TAB) {
-            rx += (tab_stop - 1) - (rx % tab_stop);
-        }
+        if (row->chars[i] == TAB) { rx += (tab_stop - 1) - (rx % tab_stop); }
         rx++;
     }
     return rx;

@@ -1,7 +1,6 @@
 #include "config.h"
 
 #include "a1.h"
-#include "input.h"
 #include "mode_command.h"
 #include "operations.h"
 #include "output.h"
@@ -42,11 +41,12 @@ void open_text_file(const char *filename) {
 
 void save_text_file(void) {
     if (editor_state.filename == NULL) {
-        editor_state.filename = editor_prompt("Save as: %s (ESC to cancel)");
-        if (editor_state.filename == NULL) {
-            editor_set_status_message("Save aborted");
-            return;
-        }
+        return;
+        // editor_state.filename = editor_prompt("Save as: %s (ESC to cancel)");
+        // if (editor_state.filename == NULL) {
+        //     editor_set_status_message(MSG_INFO, "Save aborted");
+        //     return;
+        // }
     }
 
     int len;
@@ -61,7 +61,8 @@ void save_text_file(void) {
                 close(fd);
                 free(buf);
                 editor_state.modified = false;
-                editor_set_status_message("%d bytes written to disk.", len);
+                editor_set_status_message(MSG_INFO, "%d bytes written to disk.",
+                                          len);
                 return;
             }
         }
@@ -69,7 +70,8 @@ void save_text_file(void) {
     }
 
     free(buf);
-    editor_set_status_message("Cannot save! I/O error: %s", strerror(errno));
+    editor_set_status_message(MSG_ERROR, "Cannot save! I/O error: %s",
+                              strerror(errno));
 }
 
 // checks if $XDG_CONFIG_HOME is set before using $HOME
@@ -86,7 +88,8 @@ char *get_config_file_path(void) {
         asprintf(&file_path, "%s/.config/%s/%s", home_dir, A1_CONFIG_DIR,
                  A1_CONFIG_FILE);
     } else {
-        editor_set_status_message("Cannot find config file, $HOME not set");
+        editor_set_status_message(MSG_ERROR,
+                                  "Cannot find config file, $HOME not set");
         return NULL;
     }
 
@@ -108,7 +111,7 @@ void apply_config_file(void) {
 
     while (fgets(line, sizeof(line), cfg_file)) {
         line[strcspn(line, "\n")] = '\0'; // strip newline
-        line[strcspn(line, "#")] = '\0'; // strip comments
+        line[strcspn(line, "#")] = '\0';  // strip comments
 
         if (*line == '\0') { continue; }
 
@@ -117,7 +120,8 @@ void apply_config_file(void) {
             bool valid_command = execute_command(line);
             if (!valid_command) { break; }
         } else {
-            editor_set_status_message("Invalid configuration command '%s'", line);
+            editor_set_status_message(
+                MSG_ERROR, "Invalid configuration command '%s'", line);
             break;
         }
     }
