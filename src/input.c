@@ -12,6 +12,7 @@ int editor_read_key(void) {
     int bytes_read;
     char c;
 
+    // blocking
     while ((bytes_read = read(STDIN_FILENO, &c, 1)) != 1) {
         // EAGAIN = "try again error" (required for Cygwin)
         if (bytes_read == -1 && errno != EAGAIN) {

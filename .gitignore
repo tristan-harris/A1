@@ -1,5 +1,7 @@
+.cache
 .vscode
 a1
 a1.log
+compile_commands.json
 obj
 text/*

@@ -97,11 +97,21 @@ void normal_mode_input(int input) {
     // delete line
     case 'd':
         if (editor_state.num_rows > 1) {
-            editor_del_row(editor_state.cursor_y);
-            editor_move_cursor(DIR_UP);
-        } else {
-            // TODO: clear row if only row
+            del_row(editor_state.cursor_y);
+            if (editor_state.cursor_y == editor_state.num_rows) {
+                editor_move_cursor(DIR_UP);
+            }
         }
+        // only clear line if only line
+        else {
+            clear_row(row);
+            editor_set_cursor_x(0);
+        }
+        break;
+    // delete to end of line
+    case 'D':
+        del_to_end_of_row(row, editor_state.cursor_x);
+        editor_set_cursor_x(MAX(0, row->size - 1));
         break;
 
     // enter command mode with 'find ' prompt
@@ -167,12 +177,12 @@ void normal_mode_input(int input) {
 
     // insert new lines above/below
     case 'K':
-        editor_insert_row(editor_state.cursor_y, "", 0);
+        insert_row(editor_state.cursor_y, "", 0);
         editor_set_cursor_x(0);
         transition_mode(&insert_mode, NULL);
         break;
     case 'J':
-        editor_insert_row(editor_state.cursor_y + 1, "", 0);
+        insert_row(editor_state.cursor_y + 1, "", 0);
         editor_set_cursor_x(0);
         editor_set_cursor_y(editor_state.cursor_y + 1);
         transition_mode(&insert_mode, NULL);
@@ -200,7 +210,7 @@ void normal_mode_input(int input) {
 
     // save
     case 's':
-        save_text_file();
+        save_text_buffer();
         break;
     // enter command mode with 'set ' prompt
     case 'S': {
@@ -234,7 +244,7 @@ void normal_mode_input(int input) {
 
     // delete char
     case 'x':
-        editor_row_del_char(row, editor_state.cursor_x);
+        del_char_at_row(row, editor_state.cursor_x);
         if (editor_state.cursor_x == row->size) {
             editor_move_cursor(DIR_LEFT);
         }
@@ -242,7 +252,7 @@ void normal_mode_input(int input) {
 
     // invert case
     case '~':
-        editor_row_invert_letter(row, editor_state.cursor_x);
+        invert_letter_at_row(row, editor_state.cursor_x);
         editor_move_cursor(DIR_RIGHT);
         break;
     }

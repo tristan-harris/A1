@@ -237,7 +237,7 @@ bool set_command(char **words, int count) {
             }
             editor_state.options.tab_stop = option_value;
             for (int i = 0; i < editor_state.num_rows; i++) {
-                editor_update_row(&editor_state.rows[i]);
+                update_row(&editor_state.rows[i]);
             }
         }
         break;
@@ -280,7 +280,7 @@ bool execute_command(char *command_buffer) {
     switch (parse_command(words[0])) {
     case CMD_SAVE:
         transition_mode(&normal_mode, NULL);
-        save_text_file();
+        save_text_buffer();
         valid_command = true;
         break;
     case CMD_FIND:

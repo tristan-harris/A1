@@ -12,7 +12,7 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 typedef enum {
-    TAB = 9, // horizontal tab (\t)
+    TAB = 9,    // horizontal tab (\t)
     ENTER = 13, // carriage return (\r)
     ESCAPE = 27,
     SPACE = 32,
@@ -36,7 +36,7 @@ typedef struct {
     int size;        // size of row (excluding null character)
     int render_size; // size of rendered row
     char *chars;     // row content
-    char *render;    // row content rendered to screen (needed for TABs)
+    char *render;    // row content rendered to screen (needed for \t)
 } EditorRow;
 
 typedef struct {

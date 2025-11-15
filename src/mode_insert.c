@@ -1,3 +1,4 @@
+#include "a1.h"
 #include "config.h"
 
 #include "input.h"
@@ -12,20 +13,34 @@ void insert_mode_entry(void *data) {
 }
 
 void insert_mode_input(int input) {
+    EditorRow *row = &editor_state.rows[editor_state.cursor_y];
+
     switch (input) {
     case ENTER:
-        editor_insert_newline();
+        if (editor_state.cursor_x == row->size) {
+            insert_row(editor_state.cursor_y + 1, "", 0);
+        } else {
+            insert_row(editor_state.cursor_y + 1,
+                       &row->chars[editor_state.cursor_x],
+                       row->size - editor_state.cursor_x);
+            del_to_end_of_row(&editor_state.rows[editor_state.cursor_y],
+                              editor_state.cursor_x);
+        }
+        editor_set_cursor_y(editor_state.cursor_y + 1);
+        editor_set_cursor_x(0);
         break;
 
     case TAB: {
         if (editor_state.options.tab_character) {
-            editor_insert_char(input);
+            insert_char_in_row(row, editor_state.cursor_x, input);
+            editor_move_cursor(DIR_RIGHT);
             break;
         }
 
-        // if not inserting tab character, insert spaces to next tab stop
+        // if not inserting tab character, insert spaces up to next tab stop
         do {
-            editor_insert_char(' '); // increments cursor_x automatically
+            insert_char_in_row(row, editor_state.cursor_x, ' ');
+            editor_move_cursor(DIR_RIGHT);
         } while ((editor_state.cursor_x + editor_state.options.tab_stop) %
                      editor_state.options.tab_stop !=
                  0);
@@ -38,24 +53,47 @@ void insert_mode_input(int input) {
         break;
 
     case END_KEY:
-        editor_set_cursor_x(editor_state.rows[editor_state.cursor_y].size);
+        editor_set_cursor_x(row->size);
         break;
 
     case BACKSPACE:
     case CTRL_KEY('h'): {
-        EditorRow *row = &editor_state.rows[editor_state.cursor_y];
-        int count = get_backspace_deletion_count(row, editor_state.cursor_x);
-        for (int i = 0; i < count; i++) {
-            editor_del_char();
+        // if joining onto previous line
+        if (editor_state.cursor_x == 0 && editor_state.cursor_y != 0) {
+            EditorRow *row_above =
+                &editor_state.rows[editor_state.cursor_y - 1];
+            int new_cx = row_above->size;
+            int new_cy = editor_state.cursor_y - 1;
+
+            del_to_previous_row(editor_state.cursor_y);
+
+            editor_set_cursor_y(new_cy);
+            editor_set_cursor_x(new_cx);
+        } else {
+            int count =
+                get_backspace_deletion_count(row, editor_state.cursor_x);
+            for (int i = 0; i < count; i++) {
+                del_char_at_row(row, editor_state.cursor_x - 1);
+                editor_move_cursor(DIR_LEFT);
+            }
         }
+
         break;
     }
 
     case DEL_KEY:
-        editor_move_cursor(DIR_RIGHT);
-        editor_del_char();
+        // if at end
+        if (editor_state.cursor_x == row->size) {
+            // if line below, add it to focused one
+            if (editor_state.cursor_y < editor_state.num_rows - 1) {
+                del_to_previous_row(editor_state.cursor_y + 1);
+            }
+        } else {
+            del_char_at_row(row, editor_state.cursor_x);
+        }
         break;
 
+    // TODO: improve
     case PAGE_UP:
     case PAGE_DOWN: {
         if (input == PAGE_UP) {
@@ -86,14 +124,16 @@ void insert_mode_input(int input) {
         break;
 
     case CTRL_KEY('c'):
-    case CTRL_KEY('l'):
     case ESCAPE:
         transition_mode(&normal_mode, NULL);
         break;
 
     default:
         // only allow ASCII character input
-        if (input >= SPACE && input <= '~') { editor_insert_char(input); }
+        if (input >= SPACE && input <= '~') {
+            insert_char_in_row(row, editor_state.cursor_x, input);
+            editor_move_cursor(DIR_RIGHT);
+        }
         break;
     }
 }

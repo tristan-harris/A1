@@ -32,14 +32,14 @@ void open_text_file(const char *filename) {
                (line[line_len - 1] == '\n' || line[line_len - 1] == '\r')) {
             line_len--;
         }
-        editor_insert_row(editor_state.num_rows, line, line_len);
+        insert_row(editor_state.num_rows, line, line_len);
     }
     free(line);
     fclose(fp);
     editor_state.modified = false;
 }
 
-void save_text_file(void) {
+void save_text_buffer(void) {
     if (editor_state.filename == NULL) {
         return;
         // editor_state.filename = editor_prompt("Save as: %s (ESC to cancel)");
@@ -148,7 +148,7 @@ void log_message(const char *fmt, ...) {
     fclose(file);
 }
 
-void clear_log() {
+void clear_log(void) {
     FILE *file = fopen("a1.log", "w");
     fclose(file);
 }
