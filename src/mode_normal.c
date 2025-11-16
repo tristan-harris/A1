@@ -53,6 +53,21 @@ void normal_mode_input(int input) {
         editor_page_scroll(DIR_UP, false);
         break;
 
+    // jump to beginning of visible line
+    case CTRL_KEY('h'):
+        editor_set_cursor_x(editor_state.col_scroll_offset);
+        break;
+    // jump to end of visible line
+    case CTRL_KEY('l'): {
+        int new_x = row->render_size - 1;
+        if (new_x > editor_state.screen_cols - editor_state.num_col_width) {
+            new_x = editor_state.screen_cols - editor_state.num_col_width - 1 +
+                    editor_state.col_scroll_offset;
+        }
+        new_x = editor_row_rx_to_cx(row, new_x);
+        editor_set_cursor_x(new_x);
+        break;
+    }
     // enter command mode
     case SPACE:
         transition_mode(&command_mode, NULL);
@@ -131,22 +146,6 @@ void normal_mode_input(int input) {
         editor_set_cursor_y(editor_state.num_rows - 1);
         break;
 
-    // jump to beginning of visible line
-    case 'H':
-        editor_set_cursor_x(editor_state.col_scroll_offset);
-        break;
-    // jump to end of visible line
-    case 'L': {
-        int new_x = row->render_size - 1;
-        if (new_x > editor_state.screen_cols - editor_state.num_col_width) {
-            new_x = editor_state.screen_cols - editor_state.num_col_width - 1 +
-                    editor_state.col_scroll_offset;
-        }
-        new_x = editor_row_rx_to_cx(row, new_x);
-        editor_set_cursor_x(new_x);
-        break;
-    }
-
     // enter insert mode to the left
     case 'i':
         transition_mode(&insert_mode, NULL);
@@ -176,12 +175,12 @@ void normal_mode_input(int input) {
         break;
 
     // insert new lines above/below
-    case 'K':
+    case 'O':
         insert_row(editor_state.cursor_y, "", 0);
         editor_set_cursor_x(0);
         transition_mode(&insert_mode, NULL);
         break;
-    case 'J':
+    case 'o':
         insert_row(editor_state.cursor_y + 1, "", 0);
         editor_set_cursor_x(0);
         editor_set_cursor_y(editor_state.cursor_y + 1);
@@ -220,7 +219,7 @@ void normal_mode_input(int input) {
     }
 
     // move to visible top/middle/bottom
-    case 'T': // top
+    case 'H': // high
         editor_set_cursor_y(editor_state.row_scroll_offset);
         break;
     case 'M': // middle
@@ -232,7 +231,7 @@ void normal_mode_input(int input) {
             editor_set_cursor_y(editor_state.num_rows - 1);
         }
         break;
-    case 'B': // bottom
+    case 'L': // low
         if (editor_state.row_scroll_offset + editor_state.screen_rows - 1 <
             editor_state.num_rows) {
             editor_set_cursor_y(editor_state.row_scroll_offset +
