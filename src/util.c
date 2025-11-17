@@ -196,6 +196,10 @@ bool is_string_integer(const char *string) {
     return true;
 }
 
+bool is_whitescape(const char c) {
+    return c == SPACE || c == TAB;
+}
+
 bool parse_bool(const char *string, bool *valid) {
     *valid = true;
     if (strcmp(string, "true") == 0) { return true; }

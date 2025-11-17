@@ -4,6 +4,7 @@
 #include "file_io.h"
 #include "input.h"
 #include "modes.h"
+#include "movement.h"
 #include "operations.h"
 #include "output.h"
 #include "terminal.h"
@@ -68,6 +69,7 @@ void normal_mode_input(int input) {
         editor_set_cursor_x(new_x);
         break;
     }
+
     // enter command mode
     case SPACE:
         transition_mode(&command_mode, NULL);
@@ -79,9 +81,11 @@ void normal_mode_input(int input) {
         break;
 
     // jump to first non-whitespace character from beginning of line
-    case '^':
-        editor_jump_non_whitespace(row);
+    case '^': {
+        int idx = editor_get_first_non_whitespace(row);
+        if (idx != -1) { editor_set_cursor_x(idx); }
         break;
+    }
 
     // jump to end of line
     case '$':
@@ -98,6 +102,28 @@ void normal_mode_input(int input) {
         transition_mode(&insert_mode, NULL);
         editor_set_cursor_x(row->size);
         break;
+
+    case 'b': {
+        int new_cx, new_cy;
+        get_previous_word_start(row, &new_cx, &new_cy);
+        editor_set_cursor_y(new_cy);
+        editor_set_cursor_x(new_cx);
+        break;
+    }
+    case 'e': {
+        int new_cx, new_cy;
+        get_next_word_end(row, &new_cx, &new_cy);
+        editor_set_cursor_y(new_cy);
+        editor_set_cursor_x(new_cx);
+        break;
+    }
+    case 'w': {
+        int new_cx, new_cy;
+        get_next_word_start(row, &new_cx, &new_cy);
+        editor_set_cursor_y(new_cy);
+        editor_set_cursor_x(new_cx);
+        break;
+    }
 
     // (vertically) centre view
     case 'c': {

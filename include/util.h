@@ -13,6 +13,7 @@ int get_backspace_deletion_count(const EditorRow *row, int cursor_x);
 char **split_string(const char *string, const char delim, int *count);
 int num_digits(int num);
 bool is_string_integer(const char *string);
+bool is_whitescape(const char c);
 bool parse_bool(const char *string, bool *valid);
 int parse_int(const char *string, bool *valid);
 char *bool_to_str(const bool boolean);

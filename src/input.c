@@ -99,56 +99,6 @@ void editor_set_cursor_y(int y) {
     }
 }
 
-void editor_move_cursor(EditorDirection dir) {
-    EditorRow *row = &editor_state.rows[editor_state.cursor_y];
-
-    switch (dir) {
-    case DIR_UP:
-        if (editor_state.cursor_y != 0) {
-            editor_set_cursor_y(editor_state.cursor_y - 1);
-        }
-        break;
-
-    case DIR_RIGHT:
-        if (editor_state.mode == &normal_mode) {
-            if (editor_state.cursor_x + 1 < row->size) {
-                editor_set_cursor_x(editor_state.cursor_x + 1);
-            }
-        } else if (editor_state.mode == &insert_mode) {
-            if (editor_state.cursor_x < row->size) {
-                editor_set_cursor_x(editor_state.cursor_x + 1);
-            }
-        }
-        break;
-
-    case DIR_DOWN:
-        if (editor_state.cursor_y + 1 < editor_state.num_rows) {
-            editor_set_cursor_y(editor_state.cursor_y + 1);
-        }
-        break;
-
-    case DIR_LEFT:
-        if (editor_state.cursor_x > 0) {
-            editor_set_cursor_x(editor_state.cursor_x - 1);
-        }
-        break;
-    }
-}
-
-// returns index of first non whitespace character (i.e. not tab or space)
-// returns -1 if no character found
-int editor_jump_non_whitespace(EditorRow *row) {
-    int i = 0;
-    while (i < row->size) {
-        if (row->chars[i] != SPACE && row->chars[i] != TAB) {
-            editor_set_cursor_x(i);
-            return i;
-        }
-        i++;
-    }
-    return -1;
-}
-
 void editor_process_keypress(void) {
     int input = editor_read_key();
     editor_state.mode->input_fn(input);

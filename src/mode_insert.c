@@ -2,6 +2,7 @@
 #include "config.h"
 
 #include "input.h"
+#include "movement.h"
 #include "operations.h"
 #include "terminal.h"
 #include "util.h"
