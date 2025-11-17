@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/param.h>
 #include <unistd.h>
 
 void editor_refresh_screen(void) {
@@ -70,19 +71,28 @@ void editor_page_scroll(EditorDirection dir, bool half) {
     switch (dir) {
     case DIR_UP:
         if (editor_state.cursor_y > 0) {
-            new_y = editor_state.cursor_y - scroll_amount;
-            if (new_y < 0) { new_y = 0; }
+            new_y = MAX(editor_state.cursor_y - scroll_amount, 0);
             editor_set_cursor_y(new_y);
+
+            if (new_y > editor_state.screen_rows) {
+                editor_state.row_scroll_offset =
+                    new_y - editor_state.screen_rows;
+            } else {
+                editor_state.row_scroll_offset = 0;
+            }
         }
         break;
 
     case DIR_DOWN:
         if (editor_state.cursor_y < editor_state.num_rows - 1) {
-            new_y = editor_state.cursor_y + scroll_amount;
-            if (new_y >= editor_state.num_rows) {
-                new_y = editor_state.num_rows - 1;
-            }
+            new_y = MIN(editor_state.cursor_y + scroll_amount,
+                        editor_state.num_rows - 1);
             editor_set_cursor_y(new_y);
+
+            if (new_y + scroll_amount < editor_state.num_rows) {
+                editor_state.row_scroll_offset = MIN(
+                    new_y, editor_state.num_rows - editor_state.screen_rows);
+            }
         }
         break;
 

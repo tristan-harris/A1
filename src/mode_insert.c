@@ -4,6 +4,7 @@
 #include "input.h"
 #include "movement.h"
 #include "operations.h"
+#include "output.h"
 #include "terminal.h"
 #include "util.h"
 #include <unistd.h>
@@ -94,22 +95,12 @@ void insert_mode_input(int input) {
         }
         break;
 
-    // TODO: improve
     case PAGE_UP:
-    case PAGE_DOWN: {
-        if (input == PAGE_UP) {
-            editor_state.cursor_y = editor_state.row_scroll_offset;
-        } else if (input == PAGE_DOWN) {
-            editor_state.cursor_y =
-                editor_state.row_scroll_offset + editor_state.screen_rows - 1;
-            if (editor_state.cursor_y > editor_state.num_rows)
-                editor_state.cursor_y = editor_state.num_rows;
-        }
-
-        int times = editor_state.screen_rows;
-        while (times--)
-            editor_move_cursor(input == PAGE_UP ? DIR_UP : DIR_DOWN);
-    } break;
+        editor_page_scroll(DIR_UP, true);
+        break;
+    case PAGE_DOWN:
+        editor_page_scroll(DIR_DOWN, true);
+        break;
 
     case ARROW_UP:
         editor_move_cursor(DIR_UP);
