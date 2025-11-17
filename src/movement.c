@@ -157,3 +157,58 @@ void get_next_word_end(EditorRow *row, int *new_cx, int *new_cy) {
     *new_cx = 0;
     *new_cy = cy;
 }
+
+// equivalent of '}' in vim
+void get_next_blank_line(EditorRow *row, int *new_cx, int *new_cy) {
+    int cy = editor_state.cursor_y;
+
+    // whether already starting on a blank line
+    bool blank_segment = row->size == 0;
+
+    while (true) {
+        // if reached/at end
+        if (cy == editor_state.num_rows - 1) {
+            *new_cx = row->size - 1;
+            *new_cy = cy;
+            return;
+        }
+
+        cy++;
+        row = &editor_state.rows[cy];
+
+        // if not already in blank segment and reached blank line
+        if (!blank_segment && row->size == 0) {
+            *new_cx = 0;
+            *new_cy = cy;
+            return;
+        }
+
+        // if no longer in blank segment
+        if (blank_segment && row->size != 0) { blank_segment = false; }
+    }
+}
+
+// equivalent of '{' in vim
+void get_previous_blank_line(EditorRow *row, int *new_cx, int *new_cy) {
+    int cy = editor_state.cursor_y;
+    bool blank_segment = row->size == 0;
+
+    while (true) {
+        if (cy == 0) {
+            *new_cx = 0;
+            *new_cy = cy;
+            return;
+        }
+
+        cy--;
+        row = &editor_state.rows[cy];
+
+        if (!blank_segment && row->size == 0) {
+            *new_cx = 0;
+            *new_cy = cy;
+            return;
+        }
+
+        if (blank_segment && row->size != 0) { blank_segment = false; }
+    }
+}

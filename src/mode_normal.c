@@ -103,27 +103,17 @@ void normal_mode_input(int input) {
         editor_set_cursor_x(row->size);
         break;
 
-    case 'b': {
-        int new_cx, new_cy;
-        get_previous_word_start(row, &new_cx, &new_cy);
-        editor_set_cursor_y(new_cy);
-        editor_set_cursor_x(new_cx);
+    case 'b':
+        editor_move_new_position(row, get_previous_word_start);
         break;
-    }
-    case 'e': {
-        int new_cx, new_cy;
-        get_next_word_end(row, &new_cx, &new_cy);
-        editor_set_cursor_y(new_cy);
-        editor_set_cursor_x(new_cx);
+
+    case 'e':
+        editor_move_new_position(row, get_next_word_end);
         break;
-    }
-    case 'w': {
-        int new_cx, new_cy;
-        get_next_word_start(row, &new_cx, &new_cy);
-        editor_set_cursor_y(new_cy);
-        editor_set_cursor_x(new_cx);
+
+    case 'w':
+        editor_move_new_position(row, get_next_word_start);
         break;
-    }
 
     // (vertically) centre view
     case 'c': {
@@ -273,6 +263,16 @@ void normal_mode_input(int input) {
         if (editor_state.cursor_x == row->size) {
             editor_move_cursor(DIR_LEFT);
         }
+        break;
+
+    // next blank line
+    case '}':
+        editor_move_new_position(row, get_next_blank_line);
+        break;
+
+    // previous blank line
+    case '{':
+        editor_move_new_position(row, get_previous_blank_line);
         break;
 
     // invert case

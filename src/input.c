@@ -99,6 +99,16 @@ void editor_set_cursor_y(int y) {
     }
 }
 
+// move to new position based on supplied function
+void editor_move_new_position(EditorRow *row, void move_fn(EditorRow *, int *, int *)) {
+    int new_cx, new_cy;
+    move_fn(row, &new_cx, &new_cy);
+    if (new_cx != -1 && new_cy != -1) {
+        editor_set_cursor_y(new_cy);
+        editor_set_cursor_x(new_cx);
+    }
+}
+
 void editor_process_keypress(void) {
     int input = editor_read_key();
     editor_state.mode->input_fn(input);
