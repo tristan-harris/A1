@@ -14,14 +14,14 @@ void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
 
     perror(s);
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 
 void quit(void) {
     write(STDOUT_FILENO, "\x1b[2J", 4);   // clear screen
     write(STDOUT_FILENO, "\x1b[H", 3);    // move cursor to top-left
     write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 void disable_raw_mode(void) {

@@ -11,6 +11,8 @@
 // e.g. q (113) and Q (81) become C-Q/DC1 (17)
 #define CTRL_KEY(k) ((k) & 0x1f)
 
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 typedef enum {
     TAB = 9,    // horizontal tab (\t)
     ENTER = 13, // carriage return (\r)
@@ -47,6 +49,13 @@ typedef struct {
 } EditorOptions;
 
 typedef struct {
+    bool clean;             // do not apply config file (a1rc)
+    char *config_file_path; // apply config file at path
+    bool manual;            // whether to simply print the manual and exit
+    char *file_path;        // the file to edit
+} EditorArguments;
+
+typedef struct {
     int cursor_x; // actual cursor x position
     int cursor_y; // actual cursor y position
     int target_x; // intended x position of cursor based on previous line(s)
@@ -67,6 +76,7 @@ typedef struct {
     time_t status_msg_time;
     struct termios original_termios;
     EditorOptions options;
+    EditorArguments arguments;
 } EditorState;
 
 extern EditorState editor_state;

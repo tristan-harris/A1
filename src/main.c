@@ -1,14 +1,17 @@
 #include "config.h"
 
 #include "a1.h"
+#include "argument_parse.h"
 #include "file_io.h"
 #include "input.h"
+#include "manual.h"
 #include "operations.h"
 #include "output.h"
 #include "terminal.h"
 
 #include <fcntl.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -42,6 +45,12 @@ void init_editor(void) {
     editor_state.options.line_numbers = true;
     editor_state.options.tab_character = false;
     editor_state.options.tab_stop = 4;
+
+    // default arguments
+    editor_state.arguments.clean = false;
+    editor_state.arguments.config_file_path = NULL;
+    editor_state.arguments.manual = false;
+    editor_state.arguments.file_path = NULL;
 }
 
 void handle_window_change(int sig) {
@@ -55,7 +64,18 @@ int main(int argc, char *argv[]) {
     signal(SIGWINCH, handle_window_change); // respond to window change signal
 
     init_editor();
-    apply_config_file();
+
+    parse_arguments(&editor_state.arguments, argc, argv);
+
+    // if manual specified, print it and exit
+    if (editor_state.arguments.manual) {
+        for (int i = 0; i < manual_text_len; i++) {
+            puts(manual_text[i]);
+        }
+        exit(EXIT_SUCCESS);
+    }
+
+    if (!editor_state.arguments.clean) { apply_config_file(); }
 
     // terminal
     enable_raw_mode();
@@ -66,11 +86,11 @@ int main(int argc, char *argv[]) {
 
     transition_mode(&normal_mode, NULL); // start editor in normal mode
 
-    if (argc >= 2) {
-        open_text_file(argv[1]);
+    if (editor_state.arguments.file_path != NULL) {
+        open_text_file(editor_state.arguments.file_path);
     } else {
-        insert_row(0, "", 0);   // empty new file
-        editor_state.modified = false; // override insert row setting modified
+        insert_row(0, "", 0);          // empty new file
+        editor_state.modified = false; // override insert_row() setting modified
 
         editor_refresh_screen();
         editor_draw_welcome_text();
