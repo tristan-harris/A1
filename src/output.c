@@ -289,12 +289,24 @@ void editor_draw_status_bar(AppendBuffer *ab) {
             editor_state.find_state.matches_count);
     }
 
-    // row/col positions
-    editor_add_to_status_bar_buffer(
-        right_status, sizeof(right_status), &right_len, &right_render_len,
-        "%d/%d, %d/%d", editor_state.cursor_y + 1, editor_state.num_rows,
-        editor_state.cursor_x + 1,
-        editor_state.rows[editor_state.cursor_y].size);
+    // row/col positions (find mode)
+    if (editor_state.mode == &find_mode) {
+        FindMatch *fm = &editor_state.find_state
+                             .matches[editor_state.find_state.match_index];
+
+        editor_add_to_status_bar_buffer(
+            right_status, sizeof(right_status), &right_len, &right_render_len,
+            "%d/%d, %d/%d", fm->row + 1, editor_state.num_rows, fm->col + 1,
+            editor_state.rows[fm->row].size);
+    }
+    // row/col positions (normal mode default)
+    else {
+        editor_add_to_status_bar_buffer(
+            right_status, sizeof(right_status), &right_len, &right_render_len,
+            "%d/%d, %d/%d", editor_state.cursor_y + 1, editor_state.num_rows,
+            editor_state.cursor_x + 1,
+            editor_state.rows[editor_state.cursor_y].size);
+    }
 
     // scroll percentage
     char scroll_percent[4]; // need to take null character (\0) into account
