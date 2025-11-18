@@ -271,10 +271,16 @@ void editor_draw_status_bar(AppendBuffer *ab) {
                                         &left_len, &left_render_len, " ('%s')",
                                         editor_state.find_state.string);
     }
+
     // filename
     editor_add_to_status_bar_buffer(
         left_status, sizeof(left_status), &left_len, &left_render_len, " %s",
         editor_state.filename ? editor_state.filename : "[Unnamed]");
+
+    // ready-only
+    editor_add_to_status_bar_buffer(
+        left_status, sizeof(left_status), &left_len, &left_render_len, "%s",
+        !editor_state.file_permissions.can_write ? " [Read-Only]" : "");
 
     // modified
     editor_add_to_status_bar_buffer(left_status, sizeof(left_status), &left_len,

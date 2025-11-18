@@ -212,7 +212,7 @@ void normal_mode_input(int input) {
 
     // quit unmodified file
     case 'q':
-        if (editor_state.modified) {
+        if (editor_state.file_permissions.can_write && editor_state.modified) {
             editor_set_status_message(MSG_INFO, "File has unsaved changes.");
         } else {
             quit();

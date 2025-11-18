@@ -56,6 +56,11 @@ typedef struct {
 } EditorArguments;
 
 typedef struct {
+    bool can_read;
+    bool can_write;
+} EditorFilePermissions;
+
+typedef struct {
     int cursor_x; // actual cursor x position
     int cursor_y; // actual cursor y position
     int target_x; // intended x position of cursor based on previous line(s)
@@ -77,6 +82,7 @@ typedef struct {
     struct termios original_termios;
     EditorOptions options;
     EditorArguments arguments;
+    EditorFilePermissions file_permissions;
 } EditorState;
 
 extern EditorState editor_state;

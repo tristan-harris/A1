@@ -19,7 +19,13 @@
 
 // checks whether file both exists and can be read
 bool file_exists(const char *file_path) {
-    return access(file_path, R_OK) == 0;
+    return access(file_path, F_OK) == 0;
+}
+
+void get_file_permissions(const char *file_path,
+                          EditorFilePermissions *file_permissions) {
+    file_permissions->can_read = access(file_path, R_OK) == 0;
+    file_permissions->can_write = access(file_path, W_OK) == 0;
 }
 
 void open_text_file(const char *filename) {
@@ -46,6 +52,12 @@ void open_text_file(const char *filename) {
 }
 
 void save_text_buffer(void) {
+    if (!editor_state.file_permissions.can_write) {
+        editor_set_status_message(MSG_WARNING,
+                                  "Cannot save, file is read-only.");
+        return;
+    }
+
     if (editor_state.filename == NULL) {
         return;
         // editor_state.filename = editor_prompt("Save as: %s (ESC to cancel)");

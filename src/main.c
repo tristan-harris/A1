@@ -51,6 +51,10 @@ void init_editor(void) {
     editor_state.arguments.config_file_path = NULL;
     editor_state.arguments.manual = false;
     editor_state.arguments.file_path = NULL;
+
+    // default permissions
+    editor_state.file_permissions.can_read = true;
+    editor_state.file_permissions.can_write = true;
 }
 
 void handle_window_change(int sig) {
@@ -84,31 +88,44 @@ void apply_config_file(void) {
     }
 }
 
-int main(int argc, char *argv[]) {
-    signal(SIGWINCH, handle_window_change); // respond to window change signal
+void print_manual(void) {
+    for (int i = 0; i < manual_text_len; i++) {
+        puts(manual_text[i]);
+    }
+    exit(EXIT_SUCCESS);
+}
 
+void manage_file(char *file_path) {
+    if (!file_exists(file_path)) {
+        printf("File '%s' does not exist\n", file_path);
+        exit(EXIT_FAILURE);
+    }
+    get_file_permissions(file_path, &editor_state.file_permissions);
+
+    if (!editor_state.file_permissions.can_read) {
+        printf("Cannot read file '%s'\n", file_path);
+        exit(EXIT_FAILURE);
+    }
+}
+
+int main(int argc, char *argv[]) {
     init_editor();
 
     parse_arguments(&editor_state.arguments, argc, argv);
 
     // if manual specified, print it and exit
-    if (editor_state.arguments.manual) {
-        for (int i = 0; i < manual_text_len; i++) {
-            puts(manual_text[i]);
-        }
-        exit(EXIT_SUCCESS);
-    }
+    if (editor_state.arguments.manual) { print_manual(); }
 
+    // if file specified for editing
     if (editor_state.arguments.file_path != NULL) {
-        if (!file_exists(editor_state.arguments.file_path)) {
-            printf("Could not open file at '%s'\n",
-                   editor_state.arguments.file_path);
-            exit(1);
-        }
+        manage_file(editor_state.arguments.file_path);
     }
 
     // apply configuration
     if (!editor_state.arguments.clean) { apply_config_file(); }
+
+    // respond to window change signal
+    signal(SIGWINCH, handle_window_change);
 
     // terminal
     enable_raw_mode();
