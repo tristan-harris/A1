@@ -99,6 +99,15 @@ int main(int argc, char *argv[]) {
         exit(EXIT_SUCCESS);
     }
 
+    if (editor_state.arguments.file_path != NULL) {
+        if (!file_exists(editor_state.arguments.file_path)) {
+            printf("Could not open file at '%s'\n",
+                   editor_state.arguments.file_path);
+            exit(1);
+        }
+    }
+
+    // apply configuration
     if (!editor_state.arguments.clean) { apply_config_file(); }
 
     // terminal

@@ -37,7 +37,7 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
         arguments->manual = true;
         break;
     case ARGP_KEY_ARG:
-        // if too many (file) arguments
+        // if more than one (file) argument
         if (state->arg_num > 0) { argp_usage(state); }
         arguments->file_path = arg;
         break;
