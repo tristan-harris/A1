@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 #include <unistd.h>
 
 void command_mode_entry(void *data) {
@@ -45,11 +46,10 @@ void command_mode_input(int input) {
 
     case BACKSPACE:
     case CTRL_KEY('h'):
-        if (editor_state.command_state.cursor_x > 0) {
-            editor_state.command_state
-                .buffer[editor_state.command_state.cursor_x] = '\0';
-            editor_state.command_state.cursor_x--;
-        }
+        editor_state.command_state.buffer[editor_state.command_state.cursor_x] =
+            '\0';
+        editor_state.command_state.cursor_x =
+            MAX(0, editor_state.command_state.cursor_x - 1);
         break;
 
     case TAB:
@@ -110,7 +110,11 @@ bool find_command(char **words, int count) {
         }
     }
 
-    FindModeData data = {.string = strdup(words[1]),
+    // replace '\t' with TAB characters
+    char *search_string = replace_substr_with_char(words[1], "\\t", '\t');
+
+    // find mode takes ownership of malloced string
+    FindModeData data = {.string = search_string,
                          .case_insensitive = case_insensitive};
     transition_mode(&find_mode, &data);
 
@@ -273,7 +277,7 @@ bool execute_command(char *command_buffer) {
     char **words = split_string(command_buffer, ' ', &count);
 
     if (words == NULL) {
-        editor_set_status_message(MSG_WARNING, "Invalid input.");
+        editor_set_status_message(MSG_WARNING, "Invalid input");
         transition_mode(&normal_mode, NULL);
         return false;
     }
@@ -299,7 +303,8 @@ bool execute_command(char *command_buffer) {
         valid_command = set_command(words, count);
         break;
     default:
-        editor_set_status_message(MSG_WARNING, "Unknown command");
+        editor_set_status_message(MSG_WARNING, "Unknown command '%s'",
+                                  words[0]);
         transition_mode(&normal_mode, NULL);
         valid_command = false;
         break;
