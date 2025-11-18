@@ -63,7 +63,7 @@ void handle_window_change(int sig) {
 void apply_config_file(void) {
     char *path = editor_state.arguments.config_file_path;
 
-    // if path specificied in argument
+    // if path specified in argument
     if (path != NULL) {
         if (file_exists(path)) {
             run_config_file(path);

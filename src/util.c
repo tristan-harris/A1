@@ -204,6 +204,8 @@ bool parse_bool(const char *string, bool *valid) {
     *valid = true;
     if (strcmp(string, "true") == 0) { return true; }
     if (strcmp(string, "false") == 0) { return false; }
+    if (strcmp(string, "yes") == 0) { return true; }
+    if (strcmp(string, "no") == 0) { return false; }
     if (strcmp(string, "1") == 0) { return true; }
     if (strcmp(string, "0") == 0) { return false; }
 

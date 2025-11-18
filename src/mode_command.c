@@ -52,6 +52,9 @@ void command_mode_input(int input) {
         }
         break;
 
+    case TAB:
+        break;
+
     case CTRL_KEY('u'):
         editor_state.command_state.buffer[0] = '\0';
         editor_state.command_state.cursor_x = 0;
