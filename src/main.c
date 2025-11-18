@@ -60,6 +60,30 @@ void handle_window_change(int sig) {
     editor_refresh_screen();
 }
 
+void apply_config_file(void) {
+    char *path = editor_state.arguments.config_file_path;
+
+    // if path specificied in argument
+    if (path != NULL) {
+        if (file_exists(path)) {
+            run_config_file(path);
+        } else {
+            editor_set_status_message(MSG_WARNING,
+                                      "Cannot read config file at '%s'", path);
+        }
+    } else {
+        path = get_default_config_file_path();
+        if (path) {
+            if (file_exists(path)) { run_config_file(path); }
+            free(path);
+        } else {
+            editor_set_status_message(
+                MSG_ERROR,
+                "Could not get default config file path, is $HOME set?");
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     signal(SIGWINCH, handle_window_change); // respond to window change signal
 

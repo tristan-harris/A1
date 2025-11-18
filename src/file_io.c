@@ -10,11 +10,17 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+
+// checks whether file both exists and can be read
+bool file_exists(const char *file_path) {
+    return access(file_path, R_OK) == 0;
+}
 
 void open_text_file(const char *filename) {
     free(editor_state.filename);
@@ -75,7 +81,8 @@ void save_text_buffer(void) {
 }
 
 // checks if $XDG_CONFIG_HOME is set before using $HOME
-char *get_config_file_path(void) {
+// heap-allocated, caller frees returned string
+char *get_default_config_file_path(void) {
     char *xdg_cfg_dir = getenv("XDG_CONFIG_HOME");
     char *home_dir = getenv("HOME");
 
@@ -88,28 +95,21 @@ char *get_config_file_path(void) {
         asprintf(&file_path, "%s/.config/%s/%s", home_dir, A1_CONFIG_DIR,
                  A1_CONFIG_FILE);
     } else {
-        editor_set_status_message(MSG_ERROR,
-                                  "Cannot find config file, $HOME not set");
         return NULL;
     }
 
     return file_path;
 }
 
-void apply_config_file(void) {
-    char *cfg_file_path = get_config_file_path();
-    if (!cfg_file_path) { return; }
+// if file_path is NULL, try default path
+void run_config_file(const char *file_path) {
+    FILE *file = fopen(file_path, "r");
 
-    FILE *cfg_file = fopen(cfg_file_path, "r");
-
-    if (!cfg_file) {
-        free(cfg_file_path);
-        return;
-    }
+    if (!file) { die("run_config_file"); }
 
     char line[1000];
 
-    while (fgets(line, sizeof(line), cfg_file)) {
+    while (fgets(line, sizeof(line), file)) {
         line[strcspn(line, "\n")] = '\0'; // strip newline
         line[strcspn(line, "#")] = '\0';  // strip comments
 
@@ -126,12 +126,13 @@ void apply_config_file(void) {
         }
     }
 
-    fclose(cfg_file);
-    free(cfg_file_path);
+    fclose(file);
 }
 
 void log_message(const char *fmt, ...) {
     FILE *file = fopen("a1.log", "a");
+
+    if (!file) { die("log_message"); }
 
     // timestamp
     time_t now = time(NULL);

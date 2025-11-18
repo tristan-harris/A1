@@ -18,7 +18,7 @@ static char args_doc[] = "[FILE]";
 // empty struct at end is terminating
 static struct argp_option options[] = {
     {"clean", 'c', 0, 0, "Do not apply configuration", 0},
-    {"config", 'f', "FILE", 0, "Apply config from file", 0},
+    {"config", 'f', "FILE", 0, "Apply config from this file", 0},
     {"manual", 'm', 0, 0, "Print manual and exit", 0},
     {0}};
 
