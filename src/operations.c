@@ -142,22 +142,3 @@ void clear_row(EditorRow *row) {
     update_row(row);
     editor_state.modified = true;
 }
-
-/*** editor operations ***/
-
-// void editor_insert_newline(void) {
-//     EditorRow *row = &editor_state.rows[editor_state.cursor_y];
-//     insert_row(editor_state.cursor_y + 1, &row->chars[editor_state.cursor_x],
-//                row->size - editor_state.cursor_x);
-//
-//     // pointer reassignment required because realloc() in
-//     // editor_insert_row() may move memory and invalidate the pointer
-//     row = &editor_state.rows[editor_state.cursor_y];
-//
-//     row->size = editor_state.cursor_x;
-//     row->chars[row->size] = '\0';
-//     update_row(row);
-//
-//     editor_state.cursor_y++;
-//     editor_state.cursor_x = 0;
-// }
