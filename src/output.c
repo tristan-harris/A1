@@ -275,7 +275,7 @@ void editor_draw_status_bar(AppendBuffer *ab) {
     // filename
     editor_add_to_status_bar_buffer(
         left_status, sizeof(left_status), &left_len, &left_render_len, " %s",
-        editor_state.filename ? editor_state.filename : "[Unnamed]");
+        editor_state.file_name ? editor_state.file_name : "[Unnamed]");
 
     // ready-only
     editor_add_to_status_bar_buffer(

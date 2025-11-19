@@ -36,7 +36,8 @@ void init_editor(void) {
 
     editor_state.modified = false;
     editor_state.mode = NULL;
-    editor_state.filename = NULL;
+    editor_state.file_path = NULL;
+    editor_state.file_name = NULL;
     editor_state.status_msg[0] = '\0';
     editor_state.status_msg_time = 0;
 

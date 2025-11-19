@@ -75,8 +75,9 @@ typedef struct {
     const EditorMode *mode;           // normal, insert, command etc.
     EditorCommandState command_state; // to store command mode variables
     EditorFindState find_state;       // to store find mode variables
-    bool modified; // whether file has been changed since last write
-    char *filename;
+    bool modified;   // whether file has been changed since last write
+    char *file_path; // e.g. "../files/main.c"
+    char *file_name; // e.g. "main.c"
     char status_msg[80];
     time_t status_msg_time;
     struct termios original_termios;

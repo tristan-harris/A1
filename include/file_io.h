@@ -8,7 +8,7 @@
 bool file_exists(const char *file_path);
 void get_file_permissions(const char *file_path,
                           EditorFilePermissions *file_permissions);
-void open_text_file(const char *filename);
+void open_text_file(const char *file_path);
 void save_text_buffer(void);
 
 // config

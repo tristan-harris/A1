@@ -109,10 +109,79 @@ int get_backspace_deletion_count(const EditorRow *row, int cursor_x) {
 
 // ===== GENERAL =====
 
-// returns array of strings separated by delimiter (no including delimiter)
-// delim character be escaped with backslash
-// a replacement for `strtok` from string.h
-// returns NULL if no tokens are found
+char *bool_to_str(const bool boolean) {
+    return boolean ? "true" : "false";
+}
+
+// returns number of digits in number
+int num_digits(int num) {
+    int digits = 0;
+    do {
+        num /= 10;
+        digits++;
+    } while (num != 0);
+
+    return digits;
+}
+
+bool is_string_integer(const char *string) {
+    for (int i = 0; i < (int)strlen(string); i++) {
+        if (string[i] < '0' || string[i] > '9') { return false; }
+    }
+    return true;
+}
+
+bool is_whitescape(const char c) {
+    return c == SPACE || c == TAB;
+}
+
+bool parse_bool(const char *string, bool *valid) {
+    *valid = true;
+    if (strcmp(string, "true") == 0) { return true; }
+    if (strcmp(string, "false") == 0) { return false; }
+    if (strcmp(string, "yes") == 0) { return true; }
+    if (strcmp(string, "no") == 0) { return false; }
+    if (strcmp(string, "1") == 0) { return true; }
+    if (strcmp(string, "0") == 0) { return false; }
+
+    *valid = false;
+    return false;
+}
+
+int parse_int(const char *string, bool *valid) {
+    if (!is_string_integer(string)) {
+        *valid = false;
+        return -1;
+    }
+
+    int num = 0;
+    *valid = true;
+
+    for (int i = 0; i < (int)strlen(string); i++) {
+        if (i != 0) { num *= 10; }
+        num += string[i] - 48;
+    }
+
+    return num;
+}
+
+char *file_name_from_file_path(const char *file_path) {
+    const char *separator = "/";
+    const char *ch_ptr = file_path;
+    const char *next = file_path;
+
+    // ch_ptr will point to last occurence of separator
+    // or beginning of string if there are none
+    while ((next = strstr(next + 1, separator)) != NULL) {
+        ch_ptr = next;
+    }
+
+    // do not include separator itself
+    if (*ch_ptr == *separator) { ch_ptr++; }
+
+    return strndup(ch_ptr, strlen(ch_ptr));
+}
+
 char **split_string(const char *string, const char delim, int *count) {
     if (*string == '\0') { return NULL; }
 
@@ -182,7 +251,8 @@ char **split_string(const char *string, const char delim, int *count) {
     }
 }
 
-char *replace_substr_with_char(const char *str, const char *substr, const char character) {
+char *replace_substr_with_char(const char *str, const char *substr,
+                               const char character) {
     char *new_str = strdup(str);
     size_t sub_len = strlen(substr);
     char *ch_ptr = new_str;
@@ -198,60 +268,4 @@ char *replace_substr_with_char(const char *str, const char *substr, const char c
     }
 
     return new_str;
-}
-
-// returns number of digits in number
-int num_digits(int num) {
-    int digits = 0;
-    do {
-        num /= 10;
-        digits++;
-    } while (num != 0);
-
-    return digits;
-}
-
-bool is_string_integer(const char *string) {
-    for (int i = 0; i < (int)strlen(string); i++) {
-        if (string[i] < '0' || string[i] > '9') { return false; }
-    }
-    return true;
-}
-
-bool is_whitescape(const char c) {
-    return c == SPACE || c == TAB;
-}
-
-bool parse_bool(const char *string, bool *valid) {
-    *valid = true;
-    if (strcmp(string, "true") == 0) { return true; }
-    if (strcmp(string, "false") == 0) { return false; }
-    if (strcmp(string, "yes") == 0) { return true; }
-    if (strcmp(string, "no") == 0) { return false; }
-    if (strcmp(string, "1") == 0) { return true; }
-    if (strcmp(string, "0") == 0) { return false; }
-
-    *valid = false;
-    return false;
-}
-
-int parse_int(const char *string, bool *valid) {
-    if (!is_string_integer(string)) {
-        *valid = false;
-        return -1;
-    }
-
-    int num = 0;
-    *valid = true;
-
-    for (int i = 0; i < (int)strlen(string); i++) {
-        if (i != 0) { num *= 10; }
-        num += string[i] - 48;
-    }
-
-    return num;
-}
-
-char *bool_to_str(const bool boolean) {
-    return boolean ? "true" : "false";
 }

@@ -28,11 +28,12 @@ void get_file_permissions(const char *file_path,
     file_permissions->can_write = access(file_path, W_OK) == 0;
 }
 
-void open_text_file(const char *filename) {
-    free(editor_state.filename);
-    editor_state.filename = strdup(filename);
+void open_text_file(const char *file_path) {
+    free(editor_state.file_path);
+    editor_state.file_path = strdup(file_path);
+    editor_state.file_name = file_name_from_file_path(editor_state.file_path);
 
-    FILE *fp = fopen(filename, "r");
+    FILE *fp = fopen(file_path, "r");
     if (!fp) { die("fopen"); }
 
     char *line = NULL;
@@ -58,7 +59,7 @@ void save_text_buffer(void) {
         return;
     }
 
-    if (editor_state.filename == NULL) {
+    if (editor_state.file_path == NULL) {
         return;
         // editor_state.filename = editor_prompt("Save as: %s (ESC to cancel)");
         // if (editor_state.filename == NULL) {
@@ -70,7 +71,7 @@ void save_text_buffer(void) {
     int len;
     char *buf = editor_rows_to_string(&len);
 
-    int fd = open(editor_state.filename, O_RDWR | O_CREAT, 0644);
+    int fd = open(editor_state.file_path, O_RDWR | O_CREAT, 0644);
     if (fd != -1) {
         // ftruncate() adds 0 padding or deletes data to set file size same as
         // len
