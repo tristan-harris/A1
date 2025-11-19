@@ -19,5 +19,5 @@ const char *welcome_logo[] = {"               AAA                  1111111   ",
                               " A:::::A                 A:::::A  1::::::::::1",
                               "AAAAAAA                   AAAAAAA 111111111111"};
 
-const size_t WELCOME_LOGO_ROWS = sizeof(welcome_logo) / sizeof(welcome_logo[0]);
-const size_t WELCOME_LOGO_COLS = 46;
+const int WELCOME_LOGO_ROWS = sizeof(welcome_logo) / sizeof(welcome_logo[0]);
+const int WELCOME_LOGO_COLS = 46;

@@ -363,15 +363,15 @@ void editor_draw_bottom_bar(AppendBuffer *ab) {
 
 void editor_draw_welcome_text(void) {
     // +4 to account for padding
-    if (editor_state.screen_cols < (int)WELCOME_LOGO_COLS + 4) { return; }
-    if (editor_state.screen_rows < (int)WELCOME_LOGO_ROWS + 4) { return; }
+    if (editor_state.screen_cols < WELCOME_LOGO_COLS + 4) { return; }
+    if (editor_state.screen_rows < WELCOME_LOGO_ROWS + 4) { return; }
 
     int draw_x = (editor_state.screen_cols / 2) - (WELCOME_LOGO_COLS / 2);
     int draw_y = (editor_state.screen_rows / 2) - (WELCOME_LOGO_ROWS / 2);
     int y_modifier = 0;
 
     // draw a1 welcome logo
-    while (y_modifier < (int)WELCOME_LOGO_ROWS) {
+    while (y_modifier < WELCOME_LOGO_ROWS) {
         dprintf(STDOUT_FILENO, "\x1b[%d;%dH", draw_y + y_modifier, draw_x);
         write(STDOUT_FILENO, welcome_logo[y_modifier], WELCOME_LOGO_COLS);
         y_modifier++;
