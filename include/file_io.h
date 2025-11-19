@@ -4,7 +4,10 @@
 #include <stdbool.h>
 
 // main
+
+// checks whether file both exists and is a regular file
 bool file_exists(const char *file_path);
+
 void get_file_permissions(const char *file_path,
                           EditorFilePermissions *file_permissions);
 void open_text_file(const char *file_path);

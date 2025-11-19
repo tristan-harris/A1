@@ -13,12 +13,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
-// checks whether file both exists and can be read
 bool file_exists(const char *file_path) {
-    return access(file_path, F_OK) == 0;
+    struct stat st;
+    if (stat(file_path, &st) != 0) return false;
+    return S_ISREG(st.st_mode);
 }
 
 void get_file_permissions(const char *file_path,
@@ -46,6 +48,12 @@ void open_text_file(const char *file_path) {
         }
         insert_row(editor_state.num_rows, line, line_len);
     }
+
+    // if empty file insert row
+    if (editor_state.num_rows == 0) {
+        insert_row(0, "", 0);
+    }
+
     free(line);
     fclose(fp);
     editor_state.modified = false;
