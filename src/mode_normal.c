@@ -132,6 +132,9 @@ void normal_mode_input(int input) {
             if (editor_state.cursor_y == editor_state.num_rows) {
                 editor_move_cursor(DIR_UP);
             }
+            editor_set_cursor_x(
+                MIN(editor_state.cursor_x,
+                    editor_state.rows[editor_state.cursor_y].size - 1));
         }
         // only clear line if only line
         else {
