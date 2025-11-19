@@ -1,9 +1,8 @@
-#include "a1.h"
 #include "config.h"
 
-#include <stddef.h>
-
+#include "a1.h"
 #include "manual.h"
+#include <stddef.h>
 
 const char *manual_text[] = {
     "=== A1 (v" A1_VERSION /* NOLINT(bugprone-suspicious-missing-comma) */

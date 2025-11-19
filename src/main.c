@@ -8,7 +8,6 @@
 #include "operations.h"
 #include "output.h"
 #include "terminal.h"
-
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>

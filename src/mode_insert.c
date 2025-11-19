@@ -1,6 +1,6 @@
-#include "a1.h"
 #include "config.h"
 
+#include "a1.h"
 #include "input.h"
 #include "movement.h"
 #include "operations.h"

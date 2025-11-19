@@ -6,7 +6,6 @@
 #include "output.h"
 #include "terminal.h"
 #include "util.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>

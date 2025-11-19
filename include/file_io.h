@@ -1,7 +1,6 @@
 #pragma once
 
 #include "a1.h"
-
 #include <stdbool.h>
 
 // main

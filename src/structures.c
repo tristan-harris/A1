@@ -1,7 +1,6 @@
 #include "config.h"
 
 #include "structures.h"
-
 #include <stdlib.h>
 #include <string.h>
 

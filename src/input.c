@@ -3,7 +3,6 @@
 #include "a1.h"
 #include "terminal.h"
 #include "util.h"
-
 #include <errno.h>
 #include <sys/param.h>
 #include <unistd.h>
