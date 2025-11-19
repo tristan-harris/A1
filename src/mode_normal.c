@@ -225,7 +225,7 @@ void normal_mode_input(int input) {
 
     // save
     case 's':
-        save_text_buffer();
+        save_text_buffer(NULL);
         break;
     // enter command mode with 'set ' prompt
     case 'S': {

@@ -366,8 +366,6 @@ void editor_draw_welcome_text(void) {
     if (editor_state.screen_cols < (int)WELCOME_LOGO_COLS + 4) { return; }
     if (editor_state.screen_rows < (int)WELCOME_LOGO_ROWS + 4) { return; }
 
-    write(STDOUT_FILENO, "\x1b[?25l", 6); // hide cursor
-
     int draw_x = (editor_state.screen_cols / 2) - (WELCOME_LOGO_COLS / 2);
     int draw_y = (editor_state.screen_rows / 2) - (WELCOME_LOGO_ROWS / 2);
     int y_modifier = 0;
@@ -386,9 +384,6 @@ void editor_draw_welcome_text(void) {
     draw_x = (editor_state.screen_cols / 2) - (strlen(subtitle_buf) / 2);
     dprintf(STDOUT_FILENO, "\x1b[%d;%dH", draw_y + y_modifier + 1, draw_x);
     write(STDOUT_FILENO, subtitle_buf, len);
-
-    write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
-    write(STDOUT_FILENO, "\x1b[1;1H", 6); // move cursor to top left
 }
 
 void editor_clear_status_message(void) {

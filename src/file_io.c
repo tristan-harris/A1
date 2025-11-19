@@ -18,6 +18,10 @@
 #include <unistd.h>
 
 bool file_exists(const char *file_path) {
+    return access(file_path, F_OK) == 0;
+}
+
+bool regular_file_exists(const char *file_path) {
     struct stat st;
     if (stat(file_path, &st) != 0) return false;
     return S_ISREG(st.st_mode);
@@ -50,35 +54,32 @@ void open_text_file(const char *file_path) {
     }
 
     // if empty file insert row
-    if (editor_state.num_rows == 0) {
-        insert_row(0, "", 0);
-    }
+    if (editor_state.num_rows == 0) { insert_row(0, "", 0); }
 
     free(line);
     fclose(fp);
     editor_state.modified = false;
 }
 
-void save_text_buffer(void) {
+void save_text_buffer(const char *file_path) {
     if (!editor_state.file_permissions.can_write) {
         editor_set_status_message(MSG_WARNING,
                                   "Cannot save, file is read-only.");
         return;
     }
 
-    if (editor_state.file_path == NULL) {
+    if (file_path == NULL) { file_path = editor_state.file_path; }
+
+    if (file_path == NULL) {
+        editor_set_status_message(
+            MSG_INFO, "Save file first with 'save [FILENAME]' command");
         return;
-        // editor_state.filename = editor_prompt("Save as: %s (ESC to cancel)");
-        // if (editor_state.filename == NULL) {
-        //     editor_set_status_message(MSG_INFO, "Save aborted");
-        //     return;
-        // }
     }
 
     int len;
     char *buf = editor_rows_to_string(&len);
 
-    int fd = open(editor_state.file_path, O_RDWR | O_CREAT, 0644);
+    int fd = open(file_path, O_RDWR | O_CREAT, 0644);
     if (fd != -1) {
         // ftruncate() adds 0 padding or deletes data to set file size same as
         // len

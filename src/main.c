@@ -69,7 +69,7 @@ void apply_config_file(void) {
 
     // if path specified in argument
     if (path != NULL) {
-        if (file_exists(path)) {
+        if (regular_file_exists(path)) {
             run_config_file(path);
         } else {
             editor_set_status_message(MSG_WARNING,
@@ -78,7 +78,7 @@ void apply_config_file(void) {
     } else {
         path = get_default_config_file_path();
         if (path) {
-            if (file_exists(path)) { run_config_file(path); }
+            if (regular_file_exists(path)) { run_config_file(path); }
             free(path);
         } else {
             editor_set_status_message(
@@ -96,8 +96,12 @@ void print_manual(void) {
 }
 
 void manage_file(char *file_path) {
-    if (!file_exists(file_path)) {
-        printf("File '%s' does not exist\n", file_path);
+    if (!regular_file_exists(file_path)) {
+        if (file_exists(file_path)) {
+            printf("'%s' is not a regular file\n", file_path);
+        } else {
+            printf("File '%s' does not exist\n", file_path);
+        }
         exit(EXIT_FAILURE);
     }
     get_file_permissions(file_path, &editor_state.file_permissions);

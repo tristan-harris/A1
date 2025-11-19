@@ -82,6 +82,35 @@ void command_mode_exit(void) {
     //         editor_state.cursor_x); // move cursor
 }
 
+bool save_command(char **words, int count) {
+    // if saving to current file
+    if (count == 1) {
+        save_text_buffer(NULL);
+    }
+    // if saving with a potentially new file name
+    else if (count >= 2) {
+        char *file_path = words[1];
+        if (file_exists(file_path) && strcmp(file_path, editor_state.file_path) != 0) {
+            editor_set_status_message(MSG_WARNING, "File '%s' already exists", file_path);
+        } else {
+            save_text_buffer(file_path);
+
+            if (editor_state.file_path != NULL) {
+                free(editor_state.file_path);
+            }
+            editor_state.file_path = strdup(file_path);
+
+            if (editor_state.file_name != NULL) {
+                free(editor_state.file_name);
+            }
+            editor_state.file_name = file_name_from_file_path(file_path);
+        }
+    }
+
+    transition_mode(&normal_mode, NULL);
+    return true;
+}
+
 bool find_command(char **words, int count) {
     if (count < 2) {
         editor_set_status_message(MSG_WARNING, "Search text not specified");
@@ -286,9 +315,7 @@ bool execute_command(char *command_buffer) {
 
     switch (parse_command(words[0])) {
     case CMD_SAVE:
-        transition_mode(&normal_mode, NULL);
-        save_text_buffer();
-        valid_command = true;
+        valid_command = save_command(words, count);
         break;
     case CMD_FIND:
         valid_command = find_command(words, count);
