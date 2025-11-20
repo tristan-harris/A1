@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "a1.h"
+#include "highlight.h"
 #include "input.h"
 #include "modes.h"
 #include "output.h"
@@ -144,87 +145,101 @@ void editor_scroll_render_update(void) {
     }
 }
 
+// utility function for editor_draw_rows()
+void editor_add_row_end(AppendBuffer *ab) {
+    ab_append(ab, "\x1b[39m", 5); // default text color
+    ab_append(ab, "\x1b[K", 3);   // erase from active position to end of line
+    ab_append(ab, "\r\n", 2);
+}
+
+// utility function for editor_draw_rows()
+bool editor_at_block_cursor(int cur_row, int cur_col) {
+    bool at_row = false;
+    bool at_col = false;
+
+    if (editor_state.mode == &normal_mode) {
+        at_row = cur_row == editor_state.cursor_y;
+        at_col = cur_col == editor_state.render_x;
+    } else if (editor_state.mode == &find_mode) {
+        at_row = cur_row == editor_state.find_state
+                                .matches[editor_state.find_state.match_index]
+                                .row;
+        at_col = cur_col == editor_state.render_x;
+    }
+    return at_row && at_col;
+}
+
 void editor_draw_rows(AppendBuffer *ab) {
-    char num_col_buf[15];
+    char esc_seq_buf[15];
 
     bool block_cursor =
         editor_state.mode == &normal_mode || editor_state.mode == &find_mode;
 
-    int block_cursor_y;
-
-    if (editor_state.mode == &normal_mode) {
-        block_cursor_y = editor_state.cursor_y;
-    } else if (editor_state.mode == &find_mode) {
-        block_cursor_y =
-            editor_state.find_state.matches[editor_state.find_state.match_index]
-                .row;
-    }
-
     for (int y = 0; y < editor_state.screen_rows; y++) {
-        int filerow = y + editor_state.row_scroll_offset;
+        int row_index = y + editor_state.row_scroll_offset;
+        EditorRow *row = &editor_state.rows[row_index];
 
         // if past text buffer, fill lines below with '~'
-        if (filerow >= editor_state.num_rows) {
+        if (row_index >= editor_state.num_rows) {
             ab_append(ab, "~", 1);
-        } else {
-            // line numbers
-            if (editor_state.options.line_numbers) {
-                ab_append(ab, "\x1b[2m", 4); // dim
-                int num_len =
-                    snprintf(num_col_buf, sizeof(num_col_buf), "%*d ",
-                             editor_state.num_col_width - 1, filerow + 1);
-                ab_append(ab, num_col_buf, num_len);
-                ab_append(ab, "\x1b[m", 3); // un-dim (reset formatting)
-            }
+            editor_add_row_end(ab);
+            continue;
+        }
 
-            int line_len = editor_state.rows[filerow].render_size -
-                           editor_state.col_scroll_offset;
+        // line numbers
+        if (editor_state.options.line_numbers) {
+            ab_append(ab, "\x1b[2m", 4); // dim
 
-            if (line_len >
-                editor_state.screen_cols - editor_state.num_col_width) {
-                line_len =
-                    editor_state.screen_cols - editor_state.num_col_width;
-            }
+            int num_len =
+                snprintf(esc_seq_buf, sizeof(esc_seq_buf), "%*d ",
+                         editor_state.num_col_width - 1, row_index + 1);
 
-            if (line_len < 0) { line_len = 0; }
+            ab_append(ab, esc_seq_buf, num_len);
+            ab_append(ab, "\x1b[22m", 5); // un-dim (normal intensity)
+        }
 
-            // draw block cursor by inverting cell at cursor
-            if (block_cursor && filerow == block_cursor_y) {
-                if (line_len == 0) {
-                    // if blank line still draw block character
-                    ab_append(ab, "\x1b[7m \x1b[m", 8);
-                } else {
-                    ab_append(ab,
-                              &editor_state.rows[filerow]
-                                   .render[editor_state.col_scroll_offset],
-                              editor_state.render_x -
-                                  editor_state.col_scroll_offset);
+        int line_len = row->render_size - editor_state.col_scroll_offset;
 
-                    ab_append(ab, "\x1b[7m", 4); // invert colors
+        // fit line to screen
+        line_len = MIN(line_len,
+                       editor_state.screen_cols - editor_state.num_col_width);
+        line_len = MAX(line_len, 0);
 
-                    ab_append(ab,
-                              &editor_state.rows[filerow]
-                                   .render[editor_state.render_x],
-                              1);
-
-                    ab_append(ab, "\x1b[m", 3); // reset formatting
-
-                    ab_append(ab,
-                              &editor_state.rows[filerow]
-                                   .render[editor_state.render_x + 1],
-                              line_len - editor_state.render_x +
-                                  editor_state.col_scroll_offset - 1);
-                }
-            } else {
-                ab_append(ab,
-                          &editor_state.rows[filerow]
-                               .render[editor_state.col_scroll_offset],
-                          line_len);
+        // draw block character on empty line
+        if (line_len == 0) {
+            if (block_cursor && editor_at_block_cursor(row_index, 0)) {
+                ab_append(ab, "\x1b[7m", 4); // invert
+                ab_append(ab, " ", 1);
+                ab_append(ab, "\x1b[27m", 5); // not invert
+                editor_add_row_end(ab);
+                continue;
             }
         }
 
-        ab_append(ab, "\x1b[K", 3); // erase from active position to end of line
-        ab_append(ab, "\r\n", 2);
+        EditorHighlight cur_hl = HL_NORMAL;
+
+        for (int x = 0; x < line_len; x++) {
+            int col_index = editor_state.col_scroll_offset + x;
+            EditorHighlight next_hl = row->highlight[col_index];
+
+            // if different highlight, add escape sequence
+            if (cur_hl != next_hl) {
+                int len = snprintf(esc_seq_buf, sizeof(esc_seq_buf), "\x1b[%sm",
+                                   editor_syntax_to_sequence(next_hl));
+                ab_append(ab, esc_seq_buf, len);
+                cur_hl = next_hl;
+            }
+
+            // block cursor invert
+            if (block_cursor && editor_at_block_cursor(row_index, col_index)) {
+                ab_append(ab, "\x1b[7m", 4); // invert
+                ab_append(ab, &row->render[col_index], 1);
+                ab_append(ab, "\x1b[27m", 5); // not invert
+            } else {
+                ab_append(ab, &row->render[col_index], 1);
+            }
+        }
+        editor_add_row_end(ab);
     }
 }
 

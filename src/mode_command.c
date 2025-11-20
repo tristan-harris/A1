@@ -6,6 +6,7 @@
 #include "mode_command.h"
 #include "modes.h"
 #include "operations.h"
+#include "highlight.h"
 #include "output.h"
 #include "util.h"
 #include <stdio.h>
@@ -103,7 +104,9 @@ bool save_command(char **words, int count) {
             if (editor_state.file_name != NULL) {
                 free(editor_state.file_name);
             }
+
             editor_state.file_name = file_name_from_file_path(file_path);
+            editor_set_syntax_highlight(editor_state.file_name);
         }
     }
 

@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "a1.h"
+#include "highlight.h"
 #include "mode_command.h"
 #include "operations.h"
 #include "output.h"
@@ -37,6 +38,8 @@ void open_text_file(const char *file_path) {
     free(editor_state.file_path);
     editor_state.file_path = strdup(file_path);
     editor_state.file_name = file_name_from_file_path(editor_state.file_path);
+
+    editor_set_syntax_highlight(editor_state.file_name);
 
     FILE *fp = fopen(file_path, "r");
     if (!fp) { die("fopen"); }

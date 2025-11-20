@@ -11,6 +11,9 @@
 // e.g. q (113) and Q (81) become C-Q/DC1 (17)
 #define CTRL_KEY(k) ((k) & 0x1f)
 
+#define HL_HIGHLIGHT_NUMBERS (1 << 0)
+#define HL_HIGHLIGHT_STRINGS (1 << 1)
+
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 typedef enum {
@@ -34,11 +37,20 @@ typedef enum {
 
 typedef enum { DIR_UP, DIR_RIGHT, DIR_LEFT, DIR_DOWN } EditorDirection;
 
+typedef enum {
+    HL_NORMAL,
+    HL_NUMBER,
+    HL_STRING,
+    HL_COMMENT,
+    HL_MATCH
+} EditorHighlight;
+
 typedef struct {
-    int size;        // size of row (excluding null character)
-    int render_size; // size of rendered row
-    char *chars;     // row content
-    char *render;    // row content rendered to screen (needed for \t)
+    int size;                 // size of row (excluding null character)
+    int render_size;          // size of rendered row
+    char *chars;              // row content
+    char *render;             // row content rendered to screen (needed for \t)
+    unsigned char *highlight; // contains EditorHighlight data mapped to render
 } EditorRow;
 
 typedef struct {
@@ -59,6 +71,13 @@ typedef struct {
     bool can_read;
     bool can_write;
 } EditorFilePermissions;
+
+typedef struct {
+    char *file_type;
+    char **file_match; // array of strings to match filename against
+    char *single_line_comment_start; // e.g. '//' in C, '#' in Python
+    int flags; // bit field specifying what syntax elements to highlight
+} EditorSyntax;
 
 typedef struct {
     int cursor_x; // actual cursor x position
@@ -84,6 +103,7 @@ typedef struct {
     EditorOptions options;
     EditorArguments arguments;
     EditorFilePermissions file_permissions;
+    EditorSyntax *syntax; // the syntax highlighting info for the current file
 } EditorState;
 
 extern EditorState editor_state;

@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "a1.h"
+#include "highlight.h"
 #include "operations.h"
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,8 @@ void update_row(EditorRow *row) {
     }
     row->render[idx] = '\0';
     row->render_size = idx;
+
+    editor_update_syntax_highlight(row);
 }
 
 // ===== main =====
@@ -53,6 +56,8 @@ void insert_row(int idx, const char *string, size_t len) {
 
     editor_state.rows[idx].render_size = 0;
     editor_state.rows[idx].render = NULL;
+    editor_state.rows[idx].highlight = NULL;
+
     update_row(&editor_state.rows[idx]);
 
     editor_state.num_rows++;
@@ -96,6 +101,7 @@ void del_row(int row_idx) {
     EditorRow *row = &editor_state.rows[row_idx];
     free(row->render);
     free(row->chars);
+    free(row->highlight);
 
     memmove(&editor_state.rows[row_idx], &editor_state.rows[row_idx + 1],
             sizeof(EditorRow) * (editor_state.num_rows - row_idx - 1));
