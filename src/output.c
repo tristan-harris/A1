@@ -7,6 +7,7 @@
 #include "output.h"
 #include "util.h"
 #include "welcome_logo.h"
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -220,6 +221,8 @@ void editor_draw_rows(AppendBuffer *ab) {
 
         for (int x = 0; x < line_len; x++) {
             int col_index = editor_state.col_scroll_offset + x;
+            char *draw_str = &row->render[col_index];
+
             EditorHighlight next_hl = row->highlight[col_index];
 
             // if different highlight, add escape sequence
@@ -230,13 +233,16 @@ void editor_draw_rows(AppendBuffer *ab) {
                 cur_hl = next_hl;
             }
 
+            // if control character, just draw '?'
+            if (iscntrl(*draw_str)) { draw_str = "?"; }
+
             // block cursor invert
             if (block_cursor && editor_at_block_cursor(row_index, col_index)) {
                 ab_append(ab, "\x1b[7m", 4); // invert
-                ab_append(ab, &row->render[col_index], 1);
+                ab_append(ab, draw_str, 1);
                 ab_append(ab, "\x1b[27m", 5); // not invert
             } else {
-                ab_append(ab, &row->render[col_index], 1);
+                ab_append(ab, draw_str, 1);
             }
         }
         editor_add_row_end(ab);
