@@ -41,6 +41,8 @@ typedef enum {
     HL_NORMAL,
     HL_NUMBER,
     HL_STRING,
+    HL_KEYWORD,
+    HL_TYPE,
     HL_COMMENT,
     HL_MATCH
 } EditorHighlight;
@@ -75,6 +77,8 @@ typedef struct {
 typedef struct {
     char *file_type;
     char **file_match; // array of strings to match filename against
+    char **keywords;   // e.g. 'extern', 'const', 'typedef' in C
+    char **types;      // e.g. 'int', 'char', 'double' in C
     char *single_line_comment_start; // e.g. '//' in C, '#' in Python
     int flags; // bit field specifying what syntax elements to highlight
 } EditorSyntax;

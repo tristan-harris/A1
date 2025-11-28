@@ -20,6 +20,9 @@ void editor_update_syntax_highlight(EditorRow *row) {
 
     if (editor_state.syntax == NULL) { return; }
 
+    char **keywords = editor_state.syntax->keywords;
+    char **types = editor_state.syntax->types;
+
     // single line comment start
     char *slcs = editor_state.syntax->single_line_comment_start;
     int slcs_len = slcs ? strlen(slcs) : 0;
@@ -80,6 +83,48 @@ void editor_update_syntax_highlight(EditorRow *row) {
             }
         }
 
+        // keyword check
+        if (prev_sep) {
+            for (int j = 0; keywords[j]; j++) {
+                int keyword_len = strlen(keywords[j]);
+                // if space for keyword
+                if (i + keyword_len < row->render_size) {
+                    // string comparison
+                    if (strncmp(&row->render[i], keywords[j], keyword_len) ==
+                        0) {
+                        // if keyword followed by separator
+                        if (is_separator(row->render[i + keyword_len])) {
+                            memset(&row->highlight[i], HL_KEYWORD, keyword_len);
+                            i += keyword_len;
+                            prev_sep = true;
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
+        // type check
+        if (prev_sep) {
+            for (int j = 0; types[j]; j++) {
+                int keyword_len = strlen(types[j]);
+                // if space for keyword
+                if (i + keyword_len < row->render_size) {
+                    // string comparison
+                    if (strncmp(&row->render[i], types[j], keyword_len) ==
+                        0) {
+                        // if keyword followed by separator
+                        if (is_separator(row->render[i + keyword_len])) {
+                            memset(&row->highlight[i], HL_TYPE, keyword_len);
+                            i += keyword_len;
+                            prev_sep = true;
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
         prev_sep = is_separator(ch);
         i++;
     }
@@ -91,14 +136,18 @@ void editor_update_syntax_highlight_all(void) {
     }
 }
 
-// returns code(s) to be inserted into select graphic rendition sequence
-// e.g. \x1b[0m
+// returns code(s) to be inserted into a select graphic rendition sequence
+// e.g. \x1b[33m
 char *editor_syntax_to_sequence(EditorHighlight highlight) {
     switch (highlight) {
     case HL_NUMBER:
         return "33"; // yellow
     case HL_STRING:
         return "32"; // green
+    case HL_KEYWORD:
+        return "35"; // magenta
+    case HL_TYPE:
+        return "36"; // cyan
     case HL_COMMENT:
         return "39;2"; // default fg color, dim
     case HL_MATCH:
