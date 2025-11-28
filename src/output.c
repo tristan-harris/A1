@@ -270,6 +270,10 @@ void editor_draw_status_bar(AppendBuffer *ab) {
     // the rendered length of the buffers (no escape code characters)
     int left_render_len = 0, right_render_len = 0;
 
+    // reset
+    editor_add_to_status_bar_buffer(left_status, sizeof(left_status), &left_len,
+                                    &left_render_len, "\x1b[0m");
+
     // bold & invert
     editor_add_to_status_bar_buffer(left_status, sizeof(left_status), &left_len,
                                     &left_render_len, "\x1b[1;7m");
