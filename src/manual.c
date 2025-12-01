@@ -154,6 +154,10 @@ const char *manual_text[] = {
 
     "If a config file is found there, A1 will execute every 'set' command",
     "in the file. Anything else other than comments (prefixed with '#') will",
-    "prevent any further execution of the commands in the file.\n"};
+    "prevent any further execution of the commands in the file.\n",
+
+    "=== OTHER ===",
+    "A1 has basic syntax highlighting support for C and Python.\n"
+};
 
 const int manual_text_len = ARRAY_LEN(manual_text);
