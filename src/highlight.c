@@ -20,8 +20,10 @@ void editor_update_syntax_highlight(EditorRow *row) {
 
     if (editor_state.syntax == NULL) { return; }
 
-    char **keywords = editor_state.syntax->keywords;
-    char **types = editor_state.syntax->types;
+    char **highlight_words[] = {editor_state.syntax->keywords,
+                                editor_state.syntax->types};
+
+    EditorHighlight highlights[] = {HL_KEYWORD, HL_TYPE};
 
     // single-line comment start
     char *slcs = editor_state.syntax->single_line_comment_start;
@@ -123,47 +125,28 @@ void editor_update_syntax_highlight(EditorRow *row) {
             }
         }
 
-        // keyword check
-        if (prev_sep) {
-            for (int j = 0; keywords[j]; j++) {
-                int keyword_len = strlen(keywords[j]);
-                // if space for keyword
-                if (i + keyword_len < row->render_size) {
-                    // string comparison
-                    if (strncmp(&row->render[i], keywords[j], keyword_len) ==
-                        0) {
-                        // if keyword followed by separator
-                        if (is_separator(row->render[i + keyword_len])) {
-                            memset(&row->highlight[i], HL_KEYWORD, keyword_len);
-                            i += keyword_len;
-                            prev_sep = true;
-                            continue;
+        // highlight words (keywords, types etc.)
+        for (int j = 0; j < (int)ARRAY_LEN(highlight_words); j++) {
+            if (prev_sep) {
+                for (int k = 0; highlight_words[j][k]; k++) {
+                    int word_len = strlen(highlight_words[j][k]);
+                    // if space for keyword
+                    if (i + word_len < row->render_size) {
+                        if (strncmp(&row->render[i], highlight_words[j][k],
+                                    word_len) == 0) {
+                            // if keyword followed by separator
+                            if (is_separator(row->render[i + word_len])) {
+                                memset(&row->highlight[i], highlights[j],
+                                       word_len);
+                                i += word_len;
+                                prev_sep = true;
+                                continue;
+                            }
                         }
                     }
                 }
             }
         }
-
-        // type check
-        if (prev_sep) {
-            for (int j = 0; types[j]; j++) {
-                int keyword_len = strlen(types[j]);
-                // if space for keyword
-                if (i + keyword_len < row->render_size) {
-                    // string comparison
-                    if (strncmp(&row->render[i], types[j], keyword_len) == 0) {
-                        // if keyword followed by separator
-                        if (is_separator(row->render[i + keyword_len])) {
-                            memset(&row->highlight[i], HL_TYPE, keyword_len);
-                            i += keyword_len;
-                            prev_sep = true;
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
-
         prev_sep = is_separator(ch);
         i++;
     }
