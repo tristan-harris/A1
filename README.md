@@ -14,6 +14,7 @@ A Vim inspired, terminal-based text editor written in C.
 - Four modes: Normal, Insert, Command and Find
 - Basic syntax highlighting
 - Undo/redo functionality (TODO)
+- No external libraries required
 
 ---
 
