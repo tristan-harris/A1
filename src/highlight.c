@@ -23,25 +23,65 @@ void editor_update_syntax_highlight(EditorRow *row) {
     char **keywords = editor_state.syntax->keywords;
     char **types = editor_state.syntax->types;
 
-    // single line comment start
+    // single-line comment start
     char *slcs = editor_state.syntax->single_line_comment_start;
+    // multi-line comment start
+    char *mlcs = editor_state.syntax->multi_line_comment_start;
+    // multi-line comment end
+    char *mlce = editor_state.syntax->multi_line_comment_end;
+
+    // single-line comment start length
     int slcs_len = slcs ? strlen(slcs) : 0;
+    // multi-line comment start length
+    int mlcs_len = mlcs ? strlen(mlcs) : 0;
+    // multi-line comment end length
+    int mlce_len = mlce ? strlen(mlce) : 0;
 
     bool prev_sep = true; // beginning of line treated as separator
 
     bool in_str = false;
-    char str_ch = '\0'; // wil be ', " or perhaps something else
+    char str_ch = '\0'; // will be ', " or perhaps something else
+
+    // in multi-line comment
+    bool in_ml_comment =
+        row->index > 0 && editor_state.rows[row->index - 1].hl_open_comment;
 
     int i = 0;
     while (i < row->size) {
         char ch = row->render[i];
-        unsigned char prev_hl = (i > 0) ? row->highlight[i - 1] : HL_NORMAL;
+        unsigned char prev_hl = i > 0 ? row->highlight[i - 1] : HL_NORMAL;
 
-        // single line comment check
-        if (slcs_len > 0 && !in_str) {
+        // single-line comment check
+        if (slcs_len > 0 && !in_str && !in_ml_comment) {
             if (strncmp(&row->render[i], slcs, slcs_len) == 0) {
-                memset(&row->highlight[i], HL_COMMENT, row->render_size - i);
+                memset(&row->highlight[i], HL_SL_COMMENT, row->render_size - i);
                 break;
+            }
+        }
+
+        // multi-line comment check
+        if (mlcs_len > 0 && mlce_len > 0 && !in_str) {
+            if (in_ml_comment) {
+                row->highlight[i] = HL_ML_COMMENT;
+
+                // if at end
+                if (strncmp(&row->render[i], mlce, mlce_len) == 0) {
+                    memset(&row->highlight[i], HL_ML_COMMENT, mlce_len);
+                    i += mlce_len;
+                    in_ml_comment = false;
+                    prev_sep = true;
+                    continue;
+                } else {
+                    i++;
+                    continue;
+                }
+            }
+            // if at start
+            else if (strncmp(&row->render[i], mlcs, mlcs_len) == 0) {
+                memset(&row->highlight[i], HL_ML_COMMENT, mlcs_len);
+                i += mlcs_len;
+                in_ml_comment = true;
+                continue;
             }
         }
 
@@ -111,8 +151,7 @@ void editor_update_syntax_highlight(EditorRow *row) {
                 // if space for keyword
                 if (i + keyword_len < row->render_size) {
                     // string comparison
-                    if (strncmp(&row->render[i], types[j], keyword_len) ==
-                        0) {
+                    if (strncmp(&row->render[i], types[j], keyword_len) == 0) {
                         // if keyword followed by separator
                         if (is_separator(row->render[i + keyword_len])) {
                             memset(&row->highlight[i], HL_TYPE, keyword_len);
@@ -128,6 +167,13 @@ void editor_update_syntax_highlight(EditorRow *row) {
         prev_sep = is_separator(ch);
         i++;
     }
+
+    // update following rows when multiline comment is updated
+    bool changed = row->hl_open_comment != in_ml_comment;
+    row->hl_open_comment = in_ml_comment;
+    if (changed && row->index + 1 < editor_state.num_rows) {
+        editor_update_syntax_highlight(&editor_state.rows[row->index + 1]);
+    }
 }
 
 void editor_update_syntax_highlight_all(void) {
@@ -137,7 +183,7 @@ void editor_update_syntax_highlight_all(void) {
 }
 
 // returns code(s) to be inserted into a select graphic rendition sequence
-// e.g. \x1b[33m
+// https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 char *editor_syntax_to_sequence(EditorHighlight highlight) {
     switch (highlight) {
     case HL_NUMBER:
@@ -148,8 +194,10 @@ char *editor_syntax_to_sequence(EditorHighlight highlight) {
         return "35"; // magenta
     case HL_TYPE:
         return "36"; // cyan
-    case HL_COMMENT:
+    case HL_SL_COMMENT:
         return "39;2"; // default fg color, dim
+    case HL_ML_COMMENT:
+        return "39;2"; // same as single-line comment
     case HL_MATCH:
         return "34"; // blue
     default:

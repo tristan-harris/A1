@@ -24,5 +24,7 @@ EditorSyntax syntax_db[1] = {
      .keywords = c_keywords,
      .types = c_types,
      .single_line_comment_start = "//",
+     .multi_line_comment_start = "/*",
+     .multi_line_comment_end = "*/",
      .flags = HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS},
 };

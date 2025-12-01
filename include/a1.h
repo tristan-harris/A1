@@ -43,16 +43,19 @@ typedef enum {
     HL_STRING,
     HL_KEYWORD,
     HL_TYPE,
-    HL_COMMENT,
+    HL_SL_COMMENT, // single-line comment
+    HL_ML_COMMENT, // multi-line comment
     HL_MATCH
 } EditorHighlight;
 
 typedef struct {
+    int index;                // position in editor state rows array
     int size;                 // size of row (excluding null character)
     int render_size;          // size of rendered row
     char *chars;              // row content
     char *render;             // row content rendered to screen (needed for \t)
     unsigned char *highlight; // contains EditorHighlight data mapped to render
+    bool hl_open_comment;     // if line is part of multi-line comment
 } EditorRow;
 
 typedef struct {
@@ -80,6 +83,8 @@ typedef struct {
     char **keywords;   // e.g. 'extern', 'const', 'typedef' in C
     char **types;      // e.g. 'int', 'char', 'double' in C
     char *single_line_comment_start; // e.g. '//' in C, '#' in Python
+    char *multi_line_comment_start;  // e.g. '/*' in C, "'''" in Python
+    char *multi_line_comment_end;    // e.g. '*/' in C, "'''" in Python
     int flags; // bit field specifying what syntax elements to highlight
 } EditorSyntax;
 

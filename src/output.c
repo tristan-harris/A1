@@ -149,6 +149,7 @@ void editor_scroll_render_update(void) {
 // utility function for editor_draw_rows()
 void editor_add_row_end(AppendBuffer *ab) {
     ab_append(ab, "\x1b[39m", 5); // default text color
+    ab_append(ab, "\x1b[22m", 5); // no dim
     ab_append(ab, "\x1b[K", 3);   // erase from active position to end of line
     ab_append(ab, "\r\n", 2);
 }
@@ -226,8 +227,9 @@ void editor_draw_rows(AppendBuffer *ab) {
             EditorHighlight next_hl = row->highlight[col_index];
 
             // if different highlight, add escape sequence
+            // (resets before)
             if (cur_hl != next_hl) {
-                int len = snprintf(esc_seq_buf, sizeof(esc_seq_buf), "\x1b[%sm",
+                int len = snprintf(esc_seq_buf, sizeof(esc_seq_buf), "\x1b[m\x1b[%sm",
                                    editor_syntax_to_sequence(next_hl));
                 ab_append(ab, esc_seq_buf, len);
                 cur_hl = next_hl;

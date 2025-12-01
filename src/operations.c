@@ -39,26 +39,34 @@ void update_row(EditorRow *row) {
 
 // ===== main =====
 
-void insert_row(int idx, const char *string, size_t len) {
-    if (idx < 0 || idx > editor_state.num_rows) { return; }
+void insert_row(int index, const char *string, size_t len) {
+    if (index < 0 || index > editor_state.num_rows) { return; }
 
     editor_state.rows = realloc(
         editor_state.rows, sizeof(EditorRow) * (editor_state.num_rows + 1));
 
     // shift every following row
-    memmove(&editor_state.rows[idx + 1], &editor_state.rows[idx],
-            sizeof(EditorRow) * (editor_state.num_rows - idx));
+    memmove(&editor_state.rows[index + 1], &editor_state.rows[index],
+            sizeof(EditorRow) * (editor_state.num_rows - index));
 
-    editor_state.rows[idx].size = len;
-    editor_state.rows[idx].chars = malloc(len + 1);
-    memcpy(editor_state.rows[idx].chars, string, len);
-    editor_state.rows[idx].chars[len] = '\0';
+    // shift indices of following rows
+    for (int i = index + 1; i <= editor_state.num_rows; i++) {
+        editor_state.rows[i].index++;
+    }
 
-    editor_state.rows[idx].render_size = 0;
-    editor_state.rows[idx].render = NULL;
-    editor_state.rows[idx].highlight = NULL;
+    editor_state.rows[index].index = index;
 
-    update_row(&editor_state.rows[idx]);
+    editor_state.rows[index].size = len;
+    editor_state.rows[index].chars = malloc(len + 1);
+    memcpy(editor_state.rows[index].chars, string, len);
+    editor_state.rows[index].chars[len] = '\0';
+
+    editor_state.rows[index].render_size = 0;
+    editor_state.rows[index].render = NULL;
+    editor_state.rows[index].highlight = NULL;
+    editor_state.rows[index].hl_open_comment = false;
+
+    update_row(&editor_state.rows[index]);
 
     editor_state.num_rows++;
     editor_state.modified = true;
@@ -103,8 +111,15 @@ void del_row(int row_idx) {
     free(row->chars);
     free(row->highlight);
 
+    // shift following rows
     memmove(&editor_state.rows[row_idx], &editor_state.rows[row_idx + 1],
             sizeof(EditorRow) * (editor_state.num_rows - row_idx - 1));
+
+    // update indices of following rows
+    for (int i = row_idx; i < editor_state.num_rows - 1; i++) {
+        editor_state.rows[i].index--;
+    }
+
     editor_state.num_rows--;
     editor_state.modified = true;
 }
