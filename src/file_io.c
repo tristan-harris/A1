@@ -91,8 +91,8 @@ void save_text_buffer(const char *file_path) {
                 close(fd);
                 free(buf);
                 editor_state.modified = false;
-                editor_set_status_message(MSG_INFO, "%d bytes written to disk.",
-                                          len);
+                editor_set_status_message(MSG_INFO, "%d bytes written to %s",
+                                          len, editor_state.file_path);
                 return;
             }
         }
