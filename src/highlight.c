@@ -190,13 +190,16 @@ char *editor_syntax_to_sequence(EditorHighlight highlight) {
 
 void editor_set_syntax_highlight(char *file_name) {
     editor_state.syntax = NULL;
-    if (file_name == NULL) { return; }
+    if (!file_name) { return; }
 
     // get last occurence of char
     char *extension = strrchr(file_name, '.');
 
-    for (unsigned int i = 0; i < ARRAY_LEN(syntax_db); i++) {
-        EditorSyntax *syntax = &syntax_db[i];
+    int i = 0;
+    while (true) {
+        EditorSyntax *syntax = syntax_db[i];
+
+        if (!syntax) { return; }
 
         int j = 0;
         while (syntax->file_match[j]) {
@@ -223,5 +226,7 @@ void editor_set_syntax_highlight(char *file_name) {
 
             j++;
         }
+
+        i++;
     }
 }
