@@ -19,14 +19,14 @@ A Vim inspired, terminal-based text editor written in C.
 
 ### Usage
 
-##### Main
+#### Main
 ```bash
 git clone 'https://github.com/tristan-harris/A1'
 cd A1
 make # build
 sudo make install # copy binary to /usr/local/bin (optional)
 ```
-##### Manual
+#### Manual
 
 To learn how to use and configure A1, a short manual is provided. This can be viewed by running A1 with the `--manual` flag, which is best piped into a pager as demonstrated below:
 ```bash
