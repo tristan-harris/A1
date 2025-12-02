@@ -165,6 +165,16 @@ void editor_update_syntax_highlight_all(void) {
     }
 }
 
+void editor_apply_find_mode_highlights(void) {
+    int match_len = strlen(editor_state.find_state.string);
+
+    for (int match_index = 0; match_index < editor_state.find_state.matches_count; match_index++) {
+        FindMatch *match = &editor_state.find_state.matches[match_index];
+        EditorRow *row = &editor_state.rows[match->row];
+        memset(&row->highlight[match->col], HL_MATCH, match_len);
+    }
+}
+
 // returns code(s) to be inserted into a select graphic rendition sequence
 // https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 char *editor_syntax_to_sequence(EditorHighlight highlight) {
@@ -180,9 +190,9 @@ char *editor_syntax_to_sequence(EditorHighlight highlight) {
     case HL_SL_COMMENT:
         return "39;2"; // default fg color, dim
     case HL_ML_COMMENT:
-        return "39;2"; // same as single-line comment
+        return "39;2";
     case HL_MATCH:
-        return "34"; // blue
+        return "30;44;1"; // black fg, blue bg, bold
     default:
         return "39"; // default fg color
     }

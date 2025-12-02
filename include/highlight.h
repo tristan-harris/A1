@@ -9,3 +9,5 @@ char *editor_syntax_to_sequence(EditorHighlight highlight);
 void editor_set_syntax_highlight(char *file_name);
 
 void editor_update_syntax_highlight_all(void);
+
+void editor_apply_find_mode_highlights(void);

@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "a1.h"
+#include "highlight.h"
 #include "mode_find.h"
 #include "modes.h"
 #include "output.h"
@@ -21,7 +22,8 @@ void find_mode_entry(void *data) {
     fs->string = mode_data->string;
 
     int matches_count;
-    char *(*search_fn)(const char *, const char *) = mode_data->case_insensitive ? strcasestr : strstr;
+    char *(*search_fn)(const char *, const char *) =
+        mode_data->case_insensitive ? strcasestr : strstr;
 
     FindMatch *matches = find_matches(fs->string, &matches_count, search_fn);
 
@@ -49,6 +51,8 @@ void find_mode_entry(void *data) {
 
     // if haven't found match past cursor position, loop around to first
     if (fs->match_index == -1) { fs->match_index = 0; }
+
+    editor_apply_find_mode_highlights();
 }
 
 void find_mode_input(int input) {
@@ -111,6 +115,8 @@ void find_mode_exit(void) {
 
     editor_state.find_state.matches_count = -1;
     editor_state.find_state.match_index = -1;
+
+    editor_update_syntax_highlight_all();
 }
 
 FindMatch *find_matches(const char *string, int *count,
