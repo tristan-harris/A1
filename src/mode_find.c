@@ -91,6 +91,7 @@ void find_mode_input(int input) {
 
     // jump to previous match
     case 'p':
+    case 'N':
         fs->match_index--;
         if (fs->match_index == -1) { fs->match_index = fs->matches_count - 1; }
         break;
