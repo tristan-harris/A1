@@ -10,7 +10,8 @@
 const char *argp_program_version = "v" A1_VERSION;
 
 // program description/documentation
-static char doc[] = "A1 - A terminal text-editor (use --manual for further information)";
+static char doc[] =
+    "A1 - A terminal text-editor (use --manual for further information)";
 
 // description of accepted arguments
 static char args_doc[] = "[FILE]";

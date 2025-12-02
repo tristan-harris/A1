@@ -59,6 +59,7 @@ typedef struct {
 } EditorRow;
 
 typedef struct {
+    bool auto_indent; // automatically indent new line based on line above
     bool case_insensitive_search; // determines default config for find mode
     bool line_numbers;            // whether to show line numbers
     bool tab_character; // whether to insert \t character when TAB key pressed

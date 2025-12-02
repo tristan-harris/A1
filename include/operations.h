@@ -13,3 +13,4 @@ void del_to_previous_row(int row_idx);
 void del_to_end_of_row(EditorRow *row, int col_idx);
 void invert_letter_at_row(EditorRow *row, int col_idx);
 void clear_row(EditorRow *row);
+int auto_indent(EditorRow *row);

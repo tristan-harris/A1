@@ -196,13 +196,24 @@ void normal_mode_input(int input) {
     // insert new lines above/below
     case 'O':
         insert_row(editor_state.cursor_y, "", 0);
-        editor_set_cursor_x(0);
+        if (editor_state.options.auto_indent) {
+            int new_cx = auto_indent(row);
+            editor_set_cursor_x(new_cx);
+        } else {
+            editor_set_cursor_x(0);
+        }
         transition_mode(&insert_mode, NULL);
         break;
     case 'o':
         insert_row(editor_state.cursor_y + 1, "", 0);
-        editor_set_cursor_x(0);
-        editor_set_cursor_y(editor_state.cursor_y + 1);
+        if (editor_state.options.auto_indent) {
+            int new_cx = auto_indent(&editor_state.rows[row->index + 1]);
+            editor_set_cursor_y(editor_state.cursor_y + 1);
+            editor_set_cursor_x(new_cx);
+        } else {
+            editor_set_cursor_x(0);
+            editor_set_cursor_y(editor_state.cursor_y + 1);
+        }
         transition_mode(&insert_mode, NULL);
         break;
 

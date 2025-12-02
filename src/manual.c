@@ -132,6 +132,9 @@ const char *manual_text[] = {
     "=== CONFIGURATION ===",
     "A1 can be configured by setting various options.\n",
 
+    "'autoindent' (alias 'ai') -> Whether to automatically indent a newly ",
+    "inserted line based on how much the line above is indented. Default 'true'.\n",
+
     "'caseinsensitivedefault' (alias 'cid') -> Whether to perform a",
     "case-insensitive search by default in FIND mode. Default 'true'.",
     "Can be overriden by specifying i/I in command.\n",
@@ -157,7 +160,6 @@ const char *manual_text[] = {
     "prevent any further execution of the commands in the file.\n",
 
     "=== OTHER ===",
-    "A1 has basic syntax highlighting support for C and Python.\n"
-};
+    "A1 has basic syntax highlighting support for C and Python.\n"};
 
 const int manual_text_len = ARRAY_LEN(manual_text);

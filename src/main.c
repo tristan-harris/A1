@@ -41,6 +41,7 @@ void init_editor(void) {
     editor_state.status_msg_time = 0;
 
     // default configuration
+    editor_state.options.auto_indent = true;
     editor_state.options.case_insensitive_search = true;
     editor_state.options.line_numbers = true;
     editor_state.options.tab_character = false;

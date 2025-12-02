@@ -23,11 +23,10 @@ int parse_int(const char *string, bool *valid);
 char *file_name_from_file_path(const char *file_path);
 
 // returns array of strings separated by delimiter (not including delimiter)
-// delim character be escaped with backslash
+// delim character can be escaped with backslash
 // a replacement for `strtok` from string.h
 // returns NULL if no tokens are found
 char **split_string(const char *string, const char delim, int *count);
 
 // replaces every instance of substring with a char (constructive implementation)
 char *replace_substr_with_char(const char *str, const char *substr, const char character);
-

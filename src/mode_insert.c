@@ -21,15 +21,40 @@ void insert_mode_input(int input) {
     case ENTER:
         if (editor_state.cursor_x == row->size) {
             insert_row(editor_state.cursor_y + 1, "", 0);
+
+            if (editor_state.options.auto_indent) {
+                int new_cx = auto_indent(&editor_state.rows[row->index + 1]);
+                editor_set_cursor_y(editor_state.cursor_y + 1);
+                editor_set_cursor_x(new_cx);
+            } else {
+                editor_set_cursor_y(editor_state.cursor_y + 1);
+                editor_set_cursor_x(0);
+            }
         } else {
-            insert_row(editor_state.cursor_y + 1,
-                       &row->chars[editor_state.cursor_x],
-                       row->size - editor_state.cursor_x);
-            del_to_end_of_row(&editor_state.rows[editor_state.cursor_y],
-                              editor_state.cursor_x);
+            if (editor_state.options.auto_indent) {
+                insert_row(editor_state.cursor_y + 1, "", 0);
+
+                EditorRow *new_row =
+                    &editor_state.rows[editor_state.cursor_y + 1];
+                int new_cx = auto_indent(new_row);
+
+                append_string_to_row(new_row,
+                                     &row->chars[editor_state.cursor_x],
+                                     row->size - editor_state.cursor_x);
+                del_to_end_of_row(&editor_state.rows[editor_state.cursor_y],
+                                  editor_state.cursor_x);
+                editor_set_cursor_y(editor_state.cursor_y + 1);
+                editor_set_cursor_x(new_cx);
+            } else {
+                insert_row(editor_state.cursor_y + 1,
+                           &row->chars[editor_state.cursor_x],
+                           row->size - editor_state.cursor_x);
+                del_to_end_of_row(&editor_state.rows[editor_state.cursor_y],
+                                  editor_state.cursor_x);
+                editor_set_cursor_y(editor_state.cursor_y + 1);
+                editor_set_cursor_x(0);
+            }
         }
-        editor_set_cursor_y(editor_state.cursor_y + 1);
-        editor_set_cursor_x(0);
         break;
 
     case TAB: {

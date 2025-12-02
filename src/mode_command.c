@@ -2,11 +2,11 @@
 
 #include "a1.h"
 #include "file_io.h"
+#include "highlight.h"
 #include "input.h"
 #include "mode_command.h"
 #include "modes.h"
 #include "operations.h"
-#include "highlight.h"
 #include "output.h"
 #include "util.h"
 #include <stdio.h>
@@ -91,8 +91,10 @@ bool save_command(char **words, int count) {
     // if saving with a potentially new file name
     else if (count >= 2) {
         char *file_path = words[1];
-        if (file_exists(file_path) && strcmp(file_path, editor_state.file_path) != 0) {
-            editor_set_status_message(MSG_WARNING, "File '%s' already exists", file_path);
+        if (file_exists(file_path) &&
+            strcmp(file_path, editor_state.file_path) != 0) {
+            editor_set_status_message(MSG_WARNING, "File '%s' already exists",
+                                      file_path);
         } else {
             save_text_buffer(file_path);
 
@@ -175,16 +177,18 @@ bool goto_command(char **words, int count) {
 }
 
 EditorOptionType parse_option(char *command) {
-    if (strcmp(command, "cid") == 0) { return OPTION_CASE_INSENSITIVE_DEFAULT; }
-    if (strcmp(command, "caseinsensitivedefault") == 0) {
+    if (!strcmp(command, "ai")) { return OPTION_AUTO_INDENT; }
+    if (!strcmp(command, "autoindnet")) { return OPTION_AUTO_INDENT; }
+    if (!strcmp(command, "cid")) { return OPTION_CASE_INSENSITIVE_DEFAULT; }
+    if (!strcmp(command, "caseinsensitivedefault")) {
         return OPTION_CASE_INSENSITIVE_DEFAULT;
     }
-    if (strcmp(command, "ln") == 0) { return OPTION_LINE_NUMBERS; }
-    if (strcmp(command, "linenumber") == 0) { return OPTION_LINE_NUMBERS; }
-    if (strcmp(command, "tc") == 0) { return OPTION_TAB_CHARACTER; }
-    if (strcmp(command, "tabcharacter") == 0) { return OPTION_TAB_CHARACTER; }
-    if (strcmp(command, "ts") == 0) { return OPTION_TAB_STOP; }
-    if (strcmp(command, "tabstop") == 0) { return OPTION_TAB_STOP; }
+    if (!strcmp(command, "ln")) { return OPTION_LINE_NUMBERS; }
+    if (!strcmp(command, "linenumber")) { return OPTION_LINE_NUMBERS; }
+    if (!strcmp(command, "tc")) { return OPTION_TAB_CHARACTER; }
+    if (!strcmp(command, "tabcharacter")) { return OPTION_TAB_CHARACTER; }
+    if (!strcmp(command, "ts")) { return OPTION_TAB_STOP; }
+    if (!strcmp(command, "tabstop")) { return OPTION_TAB_STOP; }
 
     return OPTION_UNKNOWN;
 }
@@ -201,6 +205,11 @@ bool get_command(char **words, int count) {
     EditorOptionType option_type = parse_option(words[1]);
 
     switch (option_type) {
+    case OPTION_AUTO_INDENT:
+        editor_set_status_message(
+            MSG_INFO, "%s=%s", words[1],
+            bool_to_str(editor_state.options.auto_indent));
+        break;
     case OPTION_CASE_INSENSITIVE_DEFAULT:
         editor_set_status_message(
             MSG_INFO, "%s=%s", words[1],
@@ -247,6 +256,11 @@ bool set_command(char **words, int count) {
     bool is_valid;
 
     switch (option_type) {
+    case OPTION_AUTO_INDENT: {
+        bool option_value = parse_bool(words[2], &is_valid);
+        if (is_valid) { editor_state.options.auto_indent = option_value; }
+        break;
+    }
     case OPTION_CASE_INSENSITIVE_DEFAULT: {
         bool option_value = parse_bool(words[2], &is_valid);
         if (is_valid) {

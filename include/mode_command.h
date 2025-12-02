@@ -12,6 +12,7 @@ typedef enum {
 } EditorCommandType;
 
 typedef enum {
+    OPTION_AUTO_INDENT,
     OPTION_CASE_INSENSITIVE_DEFAULT,
     OPTION_LINE_NUMBERS,
     OPTION_TAB_CHARACTER,

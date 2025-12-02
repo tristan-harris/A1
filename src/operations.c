@@ -163,3 +163,38 @@ void clear_row(EditorRow *row) {
     update_row(row);
     editor_state.modified = true;
 }
+
+// inserts spaces or tabs to match indentation of row above
+// to be applied to a new row
+// returns new cursor x
+int auto_indent(EditorRow *row) {
+    if (row->index == 0) { return 0; }
+
+    EditorRow *row_above = &editor_state.rows[row->index - 1];
+    if (row_above->render_size == 0) { return 0; }
+
+    char buffer[256] = {0};
+
+    bool only_spaces = true;
+
+    for (int i = 0; i < row_above->render_size; i++) {
+        if (row_above->render[i] != SPACE) {
+            only_spaces = false;
+            break;
+        }
+
+        if (editor_state.options.tab_character) {
+            buffer[i / editor_state.options.tab_stop] = '\t';
+            i += editor_state.options.tab_stop - 1;
+        } else {
+            buffer[i] = ' ';
+        }
+    }
+
+    // if line above only contains spaces, do not further indent
+    if (only_spaces) { return 0; }
+
+    int len = strlen(buffer);
+    append_string_to_row(row, buffer, len);
+    return len;
+}
