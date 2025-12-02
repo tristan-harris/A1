@@ -133,7 +133,8 @@ const char *manual_text[] = {
     "A1 can be configured by setting various options.\n",
 
     "'autoindent' (alias 'ai') -> Whether to automatically indent a newly ",
-    "inserted line based on how much the line above is indented. Default 'true'.\n",
+    "inserted line based on how much the line above is indented. Default ",
+    "'true'.\n",
 
     "'caseinsensitivedefault' (alias 'cid') -> Whether to perform a",
     "case-insensitive search by default in FIND mode. Default 'true'.",

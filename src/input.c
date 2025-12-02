@@ -14,26 +14,18 @@ int editor_read_key(void) {
     // blocking
     while ((bytes_read = read(STDIN_FILENO, &c, 1)) != 1) {
         // EAGAIN = "try again error" (required for Cygwin)
-        if (bytes_read == -1 && errno != EAGAIN) {
-            die("editor_read_key()");
-        }
+        if (bytes_read == -1 && errno != EAGAIN) { die("editor_read_key()"); }
     }
 
     if (c == ESCAPE) {
         char seq[3];
 
-        if (read(STDIN_FILENO, &seq[0], 1) != 1) {
-            return ESCAPE;
-        }
-        if (read(STDIN_FILENO, &seq[1], 1) != 1) {
-            return ESCAPE;
-        }
+        if (read(STDIN_FILENO, &seq[0], 1) != 1) { return ESCAPE; }
+        if (read(STDIN_FILENO, &seq[1], 1) != 1) { return ESCAPE; }
 
         if (seq[0] == '[') {
             if (seq[1] >= '0' && seq[1] <= '9') {
-                if (read(STDIN_FILENO, &seq[2], 1) != 1) {
-                    return ESCAPE;
-                }
+                if (read(STDIN_FILENO, &seq[2], 1) != 1) { return ESCAPE; }
                 if (seq[2] == '~') {
                     switch (seq[1]) {
                     case '1':
@@ -99,7 +91,8 @@ void editor_set_cursor_y(int y) {
 }
 
 // move to new position based on supplied function
-void editor_move_new_position(EditorRow *row, void move_fn(EditorRow *, int *, int *)) {
+void editor_move_new_position(EditorRow *row,
+                              void move_fn(EditorRow *, int *, int *)) {
     int new_cx, new_cy;
     move_fn(row, &new_cx, &new_cy);
     if (new_cx != -1 && new_cy != -1) {

@@ -229,8 +229,9 @@ void editor_draw_rows(AppendBuffer *ab) {
             // if different highlight, add escape sequence
             // (resets before)
             if (cur_hl != next_hl) {
-                int len = snprintf(esc_seq_buf, sizeof(esc_seq_buf), "\x1b[m\x1b[%sm",
-                                   editor_syntax_to_sequence(next_hl));
+                int len =
+                    snprintf(esc_seq_buf, sizeof(esc_seq_buf), "\x1b[m\x1b[%sm",
+                             editor_syntax_to_sequence(next_hl));
                 ab_append(ab, esc_seq_buf, len);
                 cur_hl = next_hl;
             }
