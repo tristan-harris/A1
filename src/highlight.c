@@ -49,7 +49,7 @@ void editor_update_syntax_highlight(EditorRow *row) {
         row->index > 0 && editor_state.rows[row->index - 1].hl_open_comment;
 
     int i = 0;
-    while (i < row->size) {
+    while (i < row->render_size) {
         char ch = row->render[i];
         unsigned char prev_hl = i > 0 ? row->highlight[i - 1] : HL_NORMAL;
 
@@ -72,10 +72,10 @@ void editor_update_syntax_highlight(EditorRow *row) {
                     i += mlce_len;
                     in_ml_comment = false;
                     prev_sep = true;
-                    continue;
+                    goto continue_iteration;
                 } else {
                     i++;
-                    continue;
+                    goto continue_iteration;
                 }
             }
             // if at start
@@ -83,7 +83,7 @@ void editor_update_syntax_highlight(EditorRow *row) {
                 memset(&row->highlight[i], HL_ML_COMMENT, mlcs_len);
                 i += mlcs_len;
                 in_ml_comment = true;
-                continue;
+                goto continue_iteration;
             }
         }
 
@@ -96,12 +96,12 @@ void editor_update_syntax_highlight(EditorRow *row) {
                 if (ch == '\\' && i + 1 < row->render_size) {
                     row->highlight[i + 1] = HL_STRING;
                     i += 2;
-                    continue;
+                    goto continue_iteration;
                 }
 
                 if (ch == str_ch) { in_str = false; }
                 i++;
-                continue;
+                goto continue_iteration;
 
             } else {
                 if (ch == '"' || ch == '\'') {
@@ -109,7 +109,7 @@ void editor_update_syntax_highlight(EditorRow *row) {
                     str_ch = ch;
                     row->highlight[i] = HL_STRING;
                     i++;
-                    continue;
+                    goto continue_iteration;
                 }
             }
         }
@@ -121,7 +121,7 @@ void editor_update_syntax_highlight(EditorRow *row) {
                 row->highlight[i] = HL_NUMBER;
                 i++;
                 prev_sep = false;
-                continue;
+                goto continue_iteration;
             }
         }
 
@@ -140,15 +140,19 @@ void editor_update_syntax_highlight(EditorRow *row) {
                                        word_len);
                                 i += word_len;
                                 prev_sep = true;
-                                continue;
+                                goto continue_iteration;
                             }
                         }
                     }
                 }
             }
         }
+
         prev_sep = is_separator(ch);
         i++;
+
+    continue_iteration:
+        continue;
     }
 
     // update following rows when multiline comment is updated
@@ -168,7 +172,8 @@ void editor_update_syntax_highlight_all(void) {
 void editor_apply_find_mode_highlights(void) {
     int match_len = strlen(editor_state.find_state.string);
 
-    for (int match_index = 0; match_index < editor_state.find_state.matches_count; match_index++) {
+    for (int match_index = 0;
+         match_index < editor_state.find_state.matches_count; match_index++) {
         FindMatch *match = &editor_state.find_state.matches[match_index];
         EditorRow *row = &editor_state.rows[match->row];
         memset(&row->highlight[match->col], HL_MATCH, match_len);
