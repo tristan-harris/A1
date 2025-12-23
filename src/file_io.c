@@ -1,4 +1,4 @@
-#include "config.h"
+#define _GNU_SOURCE
 
 #include "a1.h"
 #include "highlight.h"
@@ -34,15 +34,15 @@ void get_file_permissions(const char *file_path,
     file_permissions->can_write = access(file_path, W_OK) == 0;
 }
 
-void open_text_file(const char *file_path) {
+void editor_open_text_file(const char *file_path) {
     free(editor_state.file_path);
     editor_state.file_path = strdup(file_path);
     editor_state.file_name = file_name_from_file_path(editor_state.file_path);
 
-    editor_set_syntax_highlight(editor_state.file_name);
+    editor_set_syntax(editor_state.file_name);
 
     FILE *fp = fopen(file_path, "r");
-    if (!fp) { die("fopen"); }
+    if (!fp) { terminal_die("fopen"); }
 
     char *line = NULL;
     size_t line_cap = 0;
@@ -53,18 +53,18 @@ void open_text_file(const char *file_path) {
                (line[line_len - 1] == '\n' || line[line_len - 1] == '\r')) {
             line_len--;
         }
-        insert_row(editor_state.num_rows, line, line_len);
+        editor_insert_row(editor_state.num_rows, line, line_len);
     }
 
     // if empty file insert row
-    if (editor_state.num_rows == 0) { insert_row(0, "", 0); }
+    if (editor_state.num_rows == 0) { editor_insert_row(0, "", 0); }
 
     free(line);
     fclose(fp);
     editor_state.modified = false;
 }
 
-void save_text_buffer(const char *file_path) {
+void editor_save_text_buffer(const char *file_path) {
     if (!editor_state.file_permissions.can_write) {
         editor_set_status_message(MSG_WARNING,
                                   "Cannot save, file is read-only.");
@@ -104,9 +104,7 @@ void save_text_buffer(const char *file_path) {
                               strerror(errno));
 }
 
-// checks if $XDG_CONFIG_HOME is set before using $HOME
-// heap-allocated, caller frees returned string
-char *get_default_config_file_path(void) {
+char *editor_get_default_config_file_path(void) {
     char *xdg_cfg_dir = getenv("XDG_CONFIG_HOME");
     char *home_dir = getenv("HOME");
 
@@ -125,11 +123,10 @@ char *get_default_config_file_path(void) {
     return file_path;
 }
 
-// if file_path is NULL, try default path
-void run_config_file(const char *file_path) {
+void editor_run_config_file(const char *file_path) {
     FILE *file = fopen(file_path, "r");
 
-    if (!file) { die("run_config_file"); }
+    if (!file) { terminal_die("run_config_file"); }
 
     char line[1000];
 
@@ -153,10 +150,10 @@ void run_config_file(const char *file_path) {
     fclose(file);
 }
 
-void log_message(const char *fmt, ...) {
+void editor_log_message(const char *fmt, ...) {
     FILE *file = fopen("a1.log", "a");
 
-    if (!file) { die("log_message"); }
+    if (!file) { terminal_die("log_message"); }
 
     // timestamp
     time_t now = time(NULL);
@@ -173,7 +170,9 @@ void log_message(const char *fmt, ...) {
     fclose(file);
 }
 
-void clear_log(void) {
-    FILE *file = fopen("a1.log", "w");
-    fclose(file);
+void editor_clear_log(void) {
+    if (file_exists(A1_LOG_FILE)) {
+        FILE *file = fopen(A1_LOG_FILE, "w");
+        fclose(file);
+    }
 }

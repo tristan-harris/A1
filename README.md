@@ -20,6 +20,8 @@ A Vim inspired, terminal-based text editor written in C.
 
 ### Usage
 
+A1 has been developed and tested on Linux, and may not compile/run on MacOS or other Unix systems.
+
 #### Main
 ```bash
 git clone 'https://github.com/tristan-harris/A1'
@@ -39,4 +41,4 @@ The source file for this manual can also be viewed [here](https://github.com/tri
 
 ### Acknowledgement
 
-A1 is a continuation of the [tutorial by Page Ruten (snaptoken)](https://viewsourcecode.org/snaptoken/kilo/index.html), which is in turn based on the [text editor written by Salvatore Sanfilippo (antirez)](https://github.com/antirez/kilo).
+A1 builds on the foundations of the [tutorial by Page Ruten (snaptoken)](https://viewsourcecode.org/snaptoken/kilo/index.html), which is in turn based on the [text editor written by Salvatore Sanfilippo (antirez)](https://github.com/antirez/kilo).

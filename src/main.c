@@ -1,5 +1,3 @@
-#include "config.h"
-
 #include "a1.h"
 #include "argument_parse.h"
 #include "file_io.h"
@@ -8,16 +6,14 @@
 #include "operations.h"
 #include "output.h"
 #include "terminal.h"
-#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 EditorState editor_state;
 
-void init_editor(void) {
+static void editor_init(void) {
     editor_state.cursor_x = 0;
     editor_state.cursor_y = 0;
     editor_state.target_x = 0;
@@ -58,28 +54,28 @@ void init_editor(void) {
     editor_state.file_permissions.can_write = true;
 }
 
-void handle_window_change(int sig) {
+static void handle_window_change(int sig) {
     (void)sig; // unused
 
-    update_window_size();
+    terminal_update_window_size();
     editor_refresh_screen();
 }
 
-void apply_config_file(void) {
+static void apply_config_file(void) {
     char *path = editor_state.arguments.config_file_path;
 
     // if path specified in argument
     if (path != NULL) {
         if (regular_file_exists(path)) {
-            run_config_file(path);
+            editor_run_config_file(path);
         } else {
             editor_set_status_message(MSG_WARNING,
                                       "Cannot read config file at '%s'", path);
         }
     } else {
-        path = get_default_config_file_path();
+        path = editor_get_default_config_file_path();
         if (path) {
-            if (regular_file_exists(path)) { run_config_file(path); }
+            if (regular_file_exists(path)) { editor_run_config_file(path); }
             free(path);
         } else {
             editor_set_status_message(
@@ -89,14 +85,14 @@ void apply_config_file(void) {
     }
 }
 
-void print_manual(void) {
+static void print_manual(void) {
     for (int i = 0; i < manual_text_len; i++) {
         puts(manual_text[i]);
     }
     exit(EXIT_SUCCESS);
 }
 
-void manage_file(char *file_path) {
+static void manage_file(char *file_path) {
     if (!regular_file_exists(file_path)) {
         if (file_exists(file_path)) {
             printf("'%s' is not a regular file\n", file_path);
@@ -114,7 +110,7 @@ void manage_file(char *file_path) {
 }
 
 int main(int argc, char *argv[]) {
-    init_editor();
+    editor_init();
 
     parse_arguments(&editor_state.arguments, argc, argv);
 
@@ -133,18 +129,15 @@ int main(int argc, char *argv[]) {
     signal(SIGWINCH, handle_window_change);
 
     // terminal
-    enable_raw_mode();
-    update_window_size();
+    terminal_enable_raw_mode();
+    terminal_update_window_size();
 
-    // file io
-    clear_log();
-
-    transition_mode(&normal_mode, NULL); // start editor in normal mode
+    mode_transition(&normal_mode, NULL); // start editor in normal mode
 
     if (editor_state.arguments.file_path != NULL) {
-        open_text_file(editor_state.arguments.file_path);
+        editor_open_text_file(editor_state.arguments.file_path);
     } else {
-        insert_row(0, "", 0);          // empty new file
+        editor_insert_row(0, "", 0);   // empty new file
         editor_state.modified = false; // override insert_row() setting modified
 
         editor_refresh_screen();

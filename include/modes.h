@@ -7,9 +7,9 @@ typedef struct {
     char *name;
 } EditorMode;
 
-void transition_mode(const EditorMode *new_mode, void *data);
-
 extern const EditorMode normal_mode;
 extern const EditorMode insert_mode;
 extern const EditorMode command_mode;
 extern const EditorMode find_mode;
+
+void mode_transition(const EditorMode *new_mode, void *data);

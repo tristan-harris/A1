@@ -1,13 +1,12 @@
-#include "config.h"
-
+#include "highlight.h"
 #include "a1.h"
 #include "syntaxes.h"
+#include "util.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
 
-bool is_separator(char ch) {
+static bool is_separator(char ch) {
     return ch == SPACE || ch == '\0' || strchr(",.()+-/*=~%<>[];", ch) != NULL;
 }
 
@@ -20,17 +19,17 @@ void editor_update_syntax_highlight(EditorRow *row) {
 
     if (editor_state.syntax == NULL) { return; }
 
-    char **highlight_words[] = {editor_state.syntax->keywords,
+    const char **highlight_words[] = {editor_state.syntax->keywords,
                                 editor_state.syntax->types};
 
     EditorHighlight highlights[] = {HL_KEYWORD, HL_TYPE};
 
     // single-line comment start
-    char *slcs = editor_state.syntax->single_line_comment_start;
+    const char *slcs = editor_state.syntax->single_line_comment_start;
     // multi-line comment start
-    char *mlcs = editor_state.syntax->multi_line_comment_start;
+    const char *mlcs = editor_state.syntax->multi_line_comment_start;
     // multi-line comment end
-    char *mlce = editor_state.syntax->multi_line_comment_end;
+    const char *mlce = editor_state.syntax->multi_line_comment_end;
 
     // single-line comment start length
     int slcs_len = slcs ? strlen(slcs) : 0;
@@ -88,7 +87,7 @@ void editor_update_syntax_highlight(EditorRow *row) {
         }
 
         // string check
-        if (editor_state.syntax->flags & HL_HIGHLIGHT_STRINGS) {
+        if (editor_state.syntax->flags & SYNTAX_HIGHLIGHT_STRINGS) {
             if (in_str) {
                 row->highlight[i] = HL_STRING;
 
@@ -115,7 +114,7 @@ void editor_update_syntax_highlight(EditorRow *row) {
         }
 
         // numeric literal check
-        if (editor_state.syntax->flags & HL_HIGHLIGHT_NUMBERS) {
+        if (editor_state.syntax->flags & SYNTAX_HIGHLIGHT_NUMBERS) {
             if ((isdigit(ch) && (prev_sep || prev_hl == HL_NUMBER)) ||
                 (ch == '.' && prev_hl == HL_NUMBER)) {
                 row->highlight[i] = HL_NUMBER;
@@ -203,16 +202,16 @@ char *editor_syntax_to_sequence(EditorHighlight highlight) {
     }
 }
 
-void editor_set_syntax_highlight(char *file_name) {
+void editor_set_syntax(char *file_name) {
     editor_state.syntax = NULL;
     if (!file_name) { return; }
 
     // get last occurence of char
-    char *extension = strrchr(file_name, '.');
+    const char *extension = strrchr(file_name, '.');
 
     int i = 0;
     while (true) {
-        EditorSyntax *syntax = syntax_db[i];
+        const EditorSyntax *syntax = syntax_db[i];
 
         if (!syntax) { return; }
 

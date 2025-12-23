@@ -1,15 +1,55 @@
-#include "config.h"
-
+#include "operations.h"
 #include "a1.h"
 #include "highlight.h"
-#include "operations.h"
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
 
-// ===== util =====
+void editor_insert_row(int index, const char *string, size_t len) {
+    if (index < 0 || index > editor_state.num_rows) { return; }
 
-void update_row(EditorRow *row) {
+    editor_state.rows = realloc(
+        editor_state.rows, sizeof(EditorRow) * (editor_state.num_rows + 1));
+
+    // shift every following row
+    memmove(&editor_state.rows[index + 1], &editor_state.rows[index],
+            sizeof(EditorRow) * (editor_state.num_rows - index));
+
+    // shift indices of following rows
+    for (int i = index + 1; i <= editor_state.num_rows; i++) {
+        editor_state.rows[i].index++;
+    }
+
+    editor_state.rows[index].index = index;
+
+    editor_state.rows[index].size = len;
+    editor_state.rows[index].chars = malloc(len + 1);
+    memcpy(editor_state.rows[index].chars, string, len);
+    editor_state.rows[index].chars[len] = '\0';
+
+    editor_state.rows[index].render_size = 0;
+    editor_state.rows[index].render = NULL;
+    editor_state.rows[index].highlight = NULL;
+    editor_state.rows[index].hl_open_comment = false;
+
+    editor_update_row(&editor_state.rows[index]);
+
+    editor_state.num_rows++;
+    editor_state.modified = true;
+}
+
+void editor_insert_char_in_row(EditorRow *row, int col_idx, int character) {
+    if (col_idx < 0 || col_idx > row->size) { col_idx = row->size; }
+
+    row->chars = realloc(row->chars, row->size + 2);
+    memmove(&row->chars[col_idx + 1], &row->chars[col_idx],
+            row->size - col_idx + 1);
+    row->size++;
+    row->chars[col_idx] = character;
+    editor_update_row(row);
+    editor_state.modified = true;
+}
+
+void editor_update_row(EditorRow *row) {
     int tab_stop = editor_state.options.tab_stop;
     int tabs = 0;
 
@@ -37,137 +77,35 @@ void update_row(EditorRow *row) {
     editor_update_syntax_highlight(row);
 }
 
-// ===== main =====
-
-void insert_row(int index, const char *string, size_t len) {
-    if (index < 0 || index > editor_state.num_rows) { return; }
-
-    editor_state.rows = realloc(
-        editor_state.rows, sizeof(EditorRow) * (editor_state.num_rows + 1));
-
-    // shift every following row
-    memmove(&editor_state.rows[index + 1], &editor_state.rows[index],
-            sizeof(EditorRow) * (editor_state.num_rows - index));
-
-    // shift indices of following rows
-    for (int i = index + 1; i <= editor_state.num_rows; i++) {
-        editor_state.rows[i].index++;
-    }
-
-    editor_state.rows[index].index = index;
-
-    editor_state.rows[index].size = len;
-    editor_state.rows[index].chars = malloc(len + 1);
-    memcpy(editor_state.rows[index].chars, string, len);
-    editor_state.rows[index].chars[len] = '\0';
-
-    editor_state.rows[index].render_size = 0;
-    editor_state.rows[index].render = NULL;
-    editor_state.rows[index].highlight = NULL;
-    editor_state.rows[index].hl_open_comment = false;
-
-    update_row(&editor_state.rows[index]);
-
-    editor_state.num_rows++;
-    editor_state.modified = true;
-}
-
-void insert_char_in_row(EditorRow *row, int col_idx, int character) {
-    if (col_idx < 0 || col_idx > row->size) { col_idx = row->size; }
-
-    row->chars = realloc(row->chars, row->size + 2);
-    memmove(&row->chars[col_idx + 1], &row->chars[col_idx],
-            row->size - col_idx + 1);
-    row->size++;
-    row->chars[col_idx] = character;
-    update_row(row);
-    editor_state.modified = true;
-}
-
-void append_string_to_row(EditorRow *row, const char *string, size_t len) {
+void editor_append_string_to_row(EditorRow *row, const char *string,
+                                 size_t len) {
     row->chars = realloc(row->chars, row->size + len + 1);
     memcpy(&row->chars[row->size], string, len);
     row->size += len;
     row->chars[row->size] = '\0';
-    update_row(row);
+    editor_update_row(row);
     editor_state.modified = true;
 }
 
-void invert_letter_at_row(EditorRow *row, int col_idx) {
+void editor_invert_letter_at_row(EditorRow *row, int col_idx) {
     char c = row->chars[col_idx];
 
     // if uppercase or lower case letter
     if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
         row->chars[col_idx] ^= 0x20; // flip sixth bit to toggle case
     }
-    update_row(row);
+    editor_update_row(row);
 }
 
-void del_row(int row_idx) {
-    if (row_idx < 0 || row_idx >= editor_state.num_rows) { return; }
-
-    EditorRow *row = &editor_state.rows[row_idx];
-    free(row->render);
-    free(row->chars);
-    free(row->highlight);
-
-    // shift following rows
-    memmove(&editor_state.rows[row_idx], &editor_state.rows[row_idx + 1],
-            sizeof(EditorRow) * (editor_state.num_rows - row_idx - 1));
-
-    // update indices of following rows
-    for (int i = row_idx; i < editor_state.num_rows - 1; i++) {
-        editor_state.rows[i].index--;
-    }
-
-    editor_state.num_rows--;
-    editor_state.modified = true;
-}
-
-void del_char_at_row(EditorRow *row, int col_idx) {
-    if (col_idx < 0 || col_idx >= row->size) { return; }
-
-    memmove(&row->chars[col_idx], &row->chars[col_idx + 1],
-            row->size - col_idx);
-    row->size--;
-    update_row(row);
-    editor_state.modified = true;
-}
-
-// called when user backspaces at beginning of line and there is a line above to
-// be added to
-void del_to_previous_row(int row_idx) {
-    if (row_idx == 0) { return; }
-
-    EditorRow *row = &editor_state.rows[row_idx];
-
-    append_string_to_row(row - 1, row->chars, row->size);
-    del_row(row_idx);
-}
-
-void del_to_end_of_row(EditorRow *row, int col_idx) {
-    if (col_idx < 0 || col_idx >= row->size) { return; }
-
-    row->chars = realloc(row->chars, col_idx + 1);
-    row->size = col_idx;
-    row->chars[row->size] = '\0';
-    update_row(row);
-    editor_state.modified = true;
-}
-
-// remove chars without removing row itself
-void clear_row(EditorRow *row) {
+void editor_clear_row(EditorRow *row) {
     row->chars = realloc(row->chars, sizeof(char));
     row->size = 0;
     row->chars[0] = '\0';
-    update_row(row);
+    editor_update_row(row);
     editor_state.modified = true;
 }
 
-// inserts spaces or tabs to match indentation of row above
-// to be applied to a new row
-// returns new cursor x
-int auto_indent(EditorRow *row) {
+int editor_auto_indent_row(EditorRow *row) {
     if (row->index == 0) { return 0; }
 
     EditorRow *row_above = &editor_state.rows[row->index - 1];
@@ -195,6 +133,56 @@ int auto_indent(EditorRow *row) {
     if (only_spaces) { return 0; }
 
     int len = strlen(buffer);
-    append_string_to_row(row, buffer, len);
+    editor_append_string_to_row(row, buffer, len);
     return len;
+}
+
+void editor_del_row(int row_idx) {
+    if (row_idx < 0 || row_idx >= editor_state.num_rows) { return; }
+
+    EditorRow *row = &editor_state.rows[row_idx];
+    free(row->render);
+    free(row->chars);
+    free(row->highlight);
+
+    // shift following rows
+    memmove(&editor_state.rows[row_idx], &editor_state.rows[row_idx + 1],
+            sizeof(EditorRow) * (editor_state.num_rows - row_idx - 1));
+
+    // update indices of following rows
+    for (int i = row_idx; i < editor_state.num_rows - 1; i++) {
+        editor_state.rows[i].index--;
+    }
+
+    editor_state.num_rows--;
+    editor_state.modified = true;
+}
+
+void editor_del_char_at_row(EditorRow *row, int col_idx) {
+    if (col_idx < 0 || col_idx >= row->size) { return; }
+
+    memmove(&row->chars[col_idx], &row->chars[col_idx + 1],
+            row->size - col_idx);
+    row->size--;
+    editor_update_row(row);
+    editor_state.modified = true;
+}
+
+void editor_del_to_previous_row(int row_idx) {
+    if (row_idx == 0) { return; }
+
+    EditorRow *row = &editor_state.rows[row_idx];
+
+    editor_append_string_to_row(row - 1, row->chars, row->size);
+    editor_del_row(row_idx);
+}
+
+void editor_del_to_end_of_row(EditorRow *row, int col_idx) {
+    if (col_idx < 0 || col_idx >= row->size) { return; }
+
+    row->chars = realloc(row->chars, col_idx + 1);
+    row->size = col_idx;
+    row->chars[row->size] = '\0';
+    editor_update_row(row);
+    editor_state.modified = true;
 }

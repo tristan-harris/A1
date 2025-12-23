@@ -1,7 +1,5 @@
-#include "config.h"
-
-#include "a1.h"
 #include "manual.h"
+#include "util.h"
 #include <stddef.h>
 
 const char *manual_text[] = {
@@ -161,6 +159,6 @@ const char *manual_text[] = {
     "prevent any further execution of the commands in the file.\n",
 
     "=== OTHER ===",
-    "A1 has basic syntax highlighting support for C and Python.\n"};
+    "A1 has basic syntax highlighting support for C and Python."};
 
 const int manual_text_len = ARRAY_LEN(manual_text);

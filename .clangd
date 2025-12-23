@@ -1,5 +1,0 @@
-# https://clangd.llvm.org/config#ignoreheader
-# needed to ignore unused-include warning for config header file
-Diagnostics:
-  Includes:
-    IgnoreHeader: "config.h"

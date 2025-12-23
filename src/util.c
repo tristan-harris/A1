@@ -1,13 +1,12 @@
-#include "config.h"
+#define _GNU_SOURCE
 
 #include "a1.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// ===== EDITOR =====
+// ===== EDITOR ================================================================
 
-// convert cursor x position to equivalent rendered cursor x position
 int editor_row_cx_to_rx(const EditorRow *row, int cx) {
     int rx = 0;
     int tab_stop = editor_state.options.tab_stop;
@@ -19,7 +18,6 @@ int editor_row_cx_to_rx(const EditorRow *row, int cx) {
     return rx;
 }
 
-// convert rendered cursor x position to equivalent cursor x position
 int editor_row_rx_to_cx(const EditorRow *row, const int rx) {
     int tab_stop = editor_state.options.tab_stop;
 
@@ -38,8 +36,7 @@ int editor_row_rx_to_cx(const EditorRow *row, const int rx) {
     return cx; // only needed when rx is out of range
 }
 
-// based on stock Neovim, decided by scroll offset not cursor position
-void get_scroll_percentage(char *buf, size_t size) {
+void editor_get_scroll_percentage(char *buf, size_t size) {
     if (editor_state.row_scroll_offset == 0) {
         strncpy(buf, "Top", size);
     } else if (editor_state.num_rows - editor_state.screen_rows ==
@@ -54,13 +51,12 @@ void get_scroll_percentage(char *buf, size_t size) {
     }
 }
 
-// serialises text buffer into single string
-char *editor_rows_to_string(int *buflen) {
+char *editor_rows_to_string(int *buf_len) {
     int total_len = 0;
     for (int i = 0; i < editor_state.num_rows; i++) {
         total_len += editor_state.rows[i].size + 1; // +1 for newline character
     }
-    *buflen = total_len;
+    *buf_len = total_len;
 
     char *buf = malloc(total_len);
     char *buf_p = buf;
@@ -74,9 +70,7 @@ char *editor_rows_to_string(int *buflen) {
     return buf;
 }
 
-// returns number of characters to delete to the left of cursor
-// will return larger number if there are multiple spaces
-int get_backspace_deletion_count(const EditorRow *row, int cursor_x) {
+int editor_get_backspace_deletion_count(const EditorRow *row, int cursor_x) {
     if (cursor_x < 2) { return cursor_x; }
 
     int count = 0;
@@ -106,13 +100,21 @@ int get_backspace_deletion_count(const EditorRow *row, int cursor_x) {
     return count;
 }
 
-// ===== GENERAL =====
+int editor_get_first_non_whitespace(EditorRow *row) {
+    int i = 0;
+    while (i < row->size) {
+        if (row->chars[i] != SPACE && row->chars[i] != TAB) { return i; }
+        i++;
+    }
+    return -1;
+}
+
+// ===== GENERAL ===============================================================
 
 char *bool_to_str(const bool boolean) {
     return boolean ? "true" : "false";
 }
 
-// returns number of digits in number
 int num_digits(int num) {
     int digits = 0;
     do {

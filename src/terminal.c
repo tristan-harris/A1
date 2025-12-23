@@ -1,5 +1,3 @@
-#include "config.h"
-
 #include "a1.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +5,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-void die(const char *s) {
+void terminal_die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4);   // clear entire screen
     write(STDOUT_FILENO, "\x1b[H", 3);    // move cursor to top-left
     write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
@@ -16,24 +14,24 @@ void die(const char *s) {
     exit(EXIT_FAILURE);
 }
 
-void quit(void) {
+void terminal_quit(void) {
     write(STDOUT_FILENO, "\x1b[2J", 4);   // clear screen
     write(STDOUT_FILENO, "\x1b[H", 3);    // move cursor to top-left
     write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
     exit(EXIT_SUCCESS);
 }
 
-void disable_raw_mode(void) {
+void terminal_disable_raw_mode(void) {
     int result =
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor_state.original_termios);
-    if (result == -1) { die("tcsetattr"); }
+    if (result == -1) { terminal_die("tcsetattr"); }
 }
 
-void enable_raw_mode(void) {
+void terminal_enable_raw_mode(void) {
     int result = tcgetattr(STDIN_FILENO, &editor_state.original_termios);
-    if (result == -1) { die("tcgetattr"); }
+    if (result == -1) { terminal_die("tcgetattr"); }
 
-    atexit(disable_raw_mode);
+    atexit(terminal_disable_raw_mode);
 
     // unreferenced bit flags are legacy
     // https://viewsourcecode.org/snaptoken/kilo/02.enteringRawMode.html#miscellaneous-flags
@@ -63,10 +61,10 @@ void enable_raw_mode(void) {
     new_termios.c_cc[VTIME] = 1; // 0.1s
 
     result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_termios);
-    if (result == -1) { die("tcsetattr"); }
+    if (result == -1) { terminal_die("tcsetattr"); }
 }
 
-int get_cursor_position(int *rows, int *cols) {
+int terminal_get_cursor_position(int *rows, int *cols) {
     char buf[32];
     unsigned int i = 0;
 
@@ -88,7 +86,7 @@ int get_cursor_position(int *rows, int *cols) {
     return 0;
 }
 
-int get_window_size(int *rows, int *cols) {
+int terminal_get_window_size(int *rows, int *cols) {
     struct winsize ws;
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
@@ -96,7 +94,7 @@ int get_window_size(int *rows, int *cols) {
 
         // go to right-most and bottom-most position
         if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) { return -1; }
-        return get_cursor_position(rows, cols);
+        return terminal_get_cursor_position(rows, cols);
     } else {
         *cols = ws.ws_col;
         *rows = ws.ws_row;
@@ -104,10 +102,10 @@ int get_window_size(int *rows, int *cols) {
     }
 }
 
-void update_window_size(void) {
-    int result =
-        get_window_size(&editor_state.screen_rows, &editor_state.screen_cols);
-    if (result == -1) { die("getWindowSize"); }
+void terminal_update_window_size(void) {
+    int result = terminal_get_window_size(&editor_state.screen_rows,
+                                          &editor_state.screen_cols);
+    if (result == -1) { terminal_die("getWindowSize"); }
 
     // needed to account for status bar and message rows
     editor_state.screen_rows -= 2;

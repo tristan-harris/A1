@@ -1,5 +1,5 @@
 #pragma once
 
-void insert_mode_entry(void *data);
-void insert_mode_input(int input);
-void insert_mode_exit(void);
+void mode_insert_entry(void *data);
+void mode_insert_input(int input);
+void mode_insert_exit(void);

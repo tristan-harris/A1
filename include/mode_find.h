@@ -19,8 +19,6 @@ typedef struct {
     int match_index;
 } EditorFindState;
 
-void find_mode_entry(void *data);
-void find_mode_input(int input);
-void find_mode_exit(void);
-FindMatch *find_matches(const char *string, int *count,
-                        char *(*search_fn)(const char *, const char *));
+void mode_find_entry(void *data);
+void mode_find_input(int input);
+void mode_find_exit(void);

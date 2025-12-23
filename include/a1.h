@@ -3,18 +3,15 @@
 #include "mode_command.h"
 #include "mode_find.h"
 #include "modes.h"
+#include "syntaxes.h"
 #include <stdbool.h>
 #include <termios.h>
 #include <time.h>
 
-// strips every bit beyond fifth
-// e.g. q (113) and Q (81) become C-Q/DC1 (17)
-#define CTRL_KEY(k) ((k) & 0x1f)
-
-#define HL_HIGHLIGHT_NUMBERS (1 << 0)
-#define HL_HIGHLIGHT_STRINGS (1 << 1)
-
-#define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define A1_VERSION "1.0.0"
+#define A1_CONFIG_DIR "a1"
+#define A1_CONFIG_FILE "a1rc" // rc = run commands
+#define A1_LOG_FILE "a1.log"
 
 typedef enum {
     TAB = 9,    // horizontal tab (\t)
@@ -36,17 +33,6 @@ typedef enum {
 } EditorKey;
 
 typedef enum { DIR_UP, DIR_RIGHT, DIR_LEFT, DIR_DOWN } EditorDirection;
-
-typedef enum {
-    HL_NORMAL,
-    HL_NUMBER,
-    HL_STRING,
-    HL_KEYWORD,
-    HL_TYPE,
-    HL_SL_COMMENT, // single-line comment
-    HL_ML_COMMENT, // multi-line comment
-    HL_MATCH
-} EditorHighlight;
 
 typedef struct {
     int index;                // position in editor state rows array
@@ -79,17 +65,6 @@ typedef struct {
 } EditorFilePermissions;
 
 typedef struct {
-    char *file_type;
-    char **file_match; // array of strings to match filename against
-    char **keywords;   // e.g. 'extern', 'const', 'typedef' in C
-    char **types;      // e.g. 'int', 'char', 'double' in C
-    char *single_line_comment_start; // e.g. '//' in C, '#' in Python
-    char *multi_line_comment_start;  // e.g. '/*' in C, "'''" in Python
-    char *multi_line_comment_end;    // e.g. '*/' in C, "'''" in Python
-    int flags; // bit field specifying what syntax elements to highlight
-} EditorSyntax;
-
-typedef struct {
     int cursor_x; // actual cursor x position
     int cursor_y; // actual cursor y position
     int target_x; // intended x position of cursor based on previous line(s)
@@ -113,7 +88,7 @@ typedef struct {
     EditorOptions options;
     EditorArguments arguments;
     EditorFilePermissions file_permissions;
-    EditorSyntax *syntax; // the syntax highlighting info for the current file
+    const EditorSyntax *syntax; // the syntax highlighting info for the current file
 } EditorState;
 
 extern EditorState editor_state;

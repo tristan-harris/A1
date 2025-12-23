@@ -1,10 +1,7 @@
-#include "config.h"
-
+#include "movement.h"
 #include "a1.h"
 #include "input.h"
-#include "movement.h"
 #include "util.h"
-#include <sys/param.h>
 
 void editor_move_cursor(EditorDirection dir) {
     EditorRow *row = &editor_state.rows[editor_state.cursor_y];
@@ -42,22 +39,7 @@ void editor_move_cursor(EditorDirection dir) {
     }
 }
 
-// returns index of first non whitespace character (i.e. not tab or space)
-// returns -1 if no character found
-int editor_get_first_non_whitespace(EditorRow *row) {
-    int i = 0;
-    while (i < row->size) {
-        if (row->chars[i] != SPACE && row->chars[i] != TAB) { return i; }
-        i++;
-    }
-    return -1;
-}
-
-// returns position of beginning of last word, moving to previous line if no
-// beginning to the left of current line
-//
-// equivalent of 'B' in vim
-void get_previous_word_start(EditorRow *row, int *new_cx, int *new_cy) {
+void editor_get_previous_word_start(EditorRow *row, int *new_cx, int *new_cy) {
     int cx = editor_state.cursor_x;
     int cy = editor_state.cursor_y;
 
@@ -87,8 +69,7 @@ void get_previous_word_start(EditorRow *row, int *new_cx, int *new_cy) {
     *new_cy = cy;
 }
 
-// equivalent of 'W' in vim
-void get_next_word_start(EditorRow *row, int *new_cx, int *new_cy) {
+void editor_get_next_word_start(EditorRow *row, int *new_cx, int *new_cy) {
     int cx = editor_state.cursor_x;
     int cy = editor_state.cursor_y;
 
@@ -117,8 +98,7 @@ void get_next_word_start(EditorRow *row, int *new_cx, int *new_cy) {
     *new_cy = cy;
 }
 
-// equivalent of 'E' in vim
-void get_next_word_end(EditorRow *row, int *new_cx, int *new_cy) {
+void editor_get_next_word_end(EditorRow *row, int *new_cx, int *new_cy) {
     int cx = editor_state.cursor_x;
     int cy = editor_state.cursor_y;
 
@@ -158,8 +138,7 @@ void get_next_word_end(EditorRow *row, int *new_cx, int *new_cy) {
     *new_cy = cy;
 }
 
-// equivalent of '}' in vim
-void get_next_blank_line(EditorRow *row, int *new_cx, int *new_cy) {
+void editor_get_next_blank_line(EditorRow *row, int *new_cx, int *new_cy) {
     int cy = editor_state.cursor_y;
 
     // whether already starting on a blank line
@@ -188,8 +167,7 @@ void get_next_blank_line(EditorRow *row, int *new_cx, int *new_cy) {
     }
 }
 
-// equivalent of '{' in vim
-void get_previous_blank_line(EditorRow *row, int *new_cx, int *new_cy) {
+void editor_get_previous_blank_line(EditorRow *row, int *new_cx, int *new_cy) {
     int cy = editor_state.cursor_y;
     bool blank_segment = row->size == 0;
 

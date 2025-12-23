@@ -1,5 +1,3 @@
-#include "config.h"
-
 #include "a1.h"
 #include "file_io.h"
 #include "input.h"
@@ -9,11 +7,10 @@
 #include "output.h"
 #include "terminal.h"
 #include "util.h"
-#include <sys/param.h>
 #include <unistd.h>
 
-void normal_mode_entry(void *data) {
-    if (data != NULL) { die("normal_mode_entry"); }
+void mode_normal_entry(void *data) {
+    if (data != NULL) { terminal_die("normal_mode_entry"); }
 
     write(STDOUT_FILENO, "\x1b[?25l", 6); // hide cursor
 
@@ -26,7 +23,7 @@ void normal_mode_entry(void *data) {
     }
 }
 
-void normal_mode_input(int input) {
+void mode_normal_input(int input) {
     EditorRow *row = &editor_state.rows[editor_state.cursor_y];
 
     switch (input) {
@@ -72,7 +69,7 @@ void normal_mode_input(int input) {
 
     // enter command mode
     case SPACE:
-        transition_mode(&command_mode, NULL);
+        mode_transition(&command_mode, NULL);
         break;
 
     // jump to beginning of line
@@ -94,25 +91,25 @@ void normal_mode_input(int input) {
 
     // enter insert mode to the right
     case 'a':
-        transition_mode(&insert_mode, NULL);
+        mode_transition(&insert_mode, NULL);
         editor_move_cursor(DIR_RIGHT);
         break;
     // enter insert mode at end of line
     case 'A':
-        transition_mode(&insert_mode, NULL);
+        mode_transition(&insert_mode, NULL);
         editor_set_cursor_x(row->size);
         break;
 
     case 'b':
-        editor_move_new_position(row, get_previous_word_start);
+        editor_move_new_position(row, editor_get_previous_word_start);
         break;
 
     case 'e':
-        editor_move_new_position(row, get_next_word_end);
+        editor_move_new_position(row, editor_get_next_word_end);
         break;
 
     case 'w':
-        editor_move_new_position(row, get_next_word_start);
+        editor_move_new_position(row, editor_get_next_word_start);
         break;
 
     // (vertically) centre view
@@ -128,7 +125,7 @@ void normal_mode_input(int input) {
     // delete line
     case 'd':
         if (editor_state.num_rows > 1) {
-            del_row(editor_state.cursor_y);
+            editor_del_row(editor_state.cursor_y);
             if (editor_state.cursor_y == editor_state.num_rows) {
                 editor_move_cursor(DIR_UP);
             }
@@ -138,20 +135,20 @@ void normal_mode_input(int input) {
         }
         // only clear line if only line
         else {
-            clear_row(row);
+            editor_clear_row(row);
             editor_set_cursor_x(0);
         }
         break;
     // delete to end of line
     case 'D':
-        del_to_end_of_row(row, editor_state.cursor_x);
+        editor_del_to_end_of_row(row, editor_state.cursor_x);
         editor_set_cursor_x(MAX(0, row->size - 1));
         break;
 
     // enter command mode with 'find ' prompt
     case 'f': {
         CommandModeData data = {.prompt = "find "};
-        transition_mode(&command_mode, &data);
+        mode_transition(&command_mode, &data);
         break;
     }
 
@@ -167,12 +164,12 @@ void normal_mode_input(int input) {
 
     // enter insert mode to the left
     case 'i':
-        transition_mode(&insert_mode, NULL);
+        mode_transition(&insert_mode, NULL);
         break;
     // enter insert mode at beginning of line
     case 'I':
         editor_set_cursor_x(0);
-        transition_mode(&insert_mode, NULL);
+        mode_transition(&insert_mode, NULL);
         break;
 
     // basic movement
@@ -195,32 +192,33 @@ void normal_mode_input(int input) {
 
     // insert new lines above/below
     case 'O':
-        insert_row(editor_state.cursor_y, "", 0);
+        editor_insert_row(editor_state.cursor_y, "", 0);
         if (editor_state.options.auto_indent) {
-            int new_cx = auto_indent(row);
+            int new_cx = editor_auto_indent_row(row);
             editor_set_cursor_x(new_cx);
         } else {
             editor_set_cursor_x(0);
         }
-        transition_mode(&insert_mode, NULL);
+        mode_transition(&insert_mode, NULL);
         break;
     case 'o':
-        insert_row(editor_state.cursor_y + 1, "", 0);
+        editor_insert_row(editor_state.cursor_y + 1, "", 0);
         if (editor_state.options.auto_indent) {
-            int new_cx = auto_indent(&editor_state.rows[row->index + 1]);
+            int new_cx =
+                editor_auto_indent_row(&editor_state.rows[row->index + 1]);
             editor_set_cursor_y(editor_state.cursor_y + 1);
             editor_set_cursor_x(new_cx);
         } else {
             editor_set_cursor_x(0);
             editor_set_cursor_y(editor_state.cursor_y + 1);
         }
-        transition_mode(&insert_mode, NULL);
+        mode_transition(&insert_mode, NULL);
         break;
 
     // enter command with 'goto ' prompt
     case 'n': {
         CommandModeData data = {.prompt = "goto "};
-        transition_mode(&command_mode, &data);
+        mode_transition(&command_mode, &data);
         break;
     }
 
@@ -229,22 +227,22 @@ void normal_mode_input(int input) {
         if (editor_state.file_permissions.can_write && editor_state.modified) {
             editor_set_status_message(MSG_INFO, "File has unsaved changes.");
         } else {
-            quit();
+            terminal_quit();
         }
         break;
     // force quit
     case 'Q':
-        quit();
+        terminal_quit();
         break;
 
     // save
     case 's':
-        save_text_buffer(NULL);
+        editor_save_text_buffer(NULL);
         break;
     // enter command mode with 'set ' prompt
     case 'S': {
         CommandModeData data = {.prompt = "set "};
-        transition_mode(&command_mode, &data);
+        mode_transition(&command_mode, &data);
         break;
     }
 
@@ -273,7 +271,7 @@ void normal_mode_input(int input) {
 
     // delete char
     case 'x':
-        del_char_at_row(row, editor_state.cursor_x);
+        editor_del_char_at_row(row, editor_state.cursor_x);
         if (editor_state.cursor_x == row->size) {
             editor_move_cursor(DIR_LEFT);
         }
@@ -281,20 +279,20 @@ void normal_mode_input(int input) {
 
     // next blank line
     case '}':
-        editor_move_new_position(row, get_next_blank_line);
+        editor_move_new_position(row, editor_get_next_blank_line);
         break;
 
     // previous blank line
     case '{':
-        editor_move_new_position(row, get_previous_blank_line);
+        editor_move_new_position(row, editor_get_previous_blank_line);
         break;
 
     // invert case
     case '~':
-        invert_letter_at_row(row, editor_state.cursor_x);
+        editor_invert_letter_at_row(row, editor_state.cursor_x);
         editor_move_cursor(DIR_RIGHT);
         break;
     }
 }
 
-void normal_mode_exit(void) {}
+void mode_normal_exit(void) {}

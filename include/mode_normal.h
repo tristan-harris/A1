@@ -1,5 +1,5 @@
 #pragma once
 
-void normal_mode_entry(void *data);
-void normal_mode_input(int input);
-void normal_mode_exit(void);
+void mode_normal_entry(void *data);
+void mode_normal_input(int input);
+void mode_normal_exit(void);

@@ -1,5 +1,3 @@
-#include "config.h"
-
 #include "a1.h"
 #include <argp.h>
 #include <stdbool.h>
