@@ -9,7 +9,6 @@
 #include "operations.h"
 #include "output.h"
 #include "util.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -41,7 +40,7 @@ static bool get_command(char **words, int count);
 static bool set_command(char **words, int count);
 
 void mode_command_entry(void *data) {
-    dprintf(STDOUT_FILENO, "\x1b[?25h"); // show cursor
+    write(STDOUT_FILENO, "\x1b[?25h", 6); // show cursor
     editor_state.status_msg[0] = '\0';   // clear status message
 
     if (data == NULL) {
