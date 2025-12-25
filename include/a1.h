@@ -1,5 +1,6 @@
 #pragma once
 
+#include "action_history.h"
 #include "mode_command.h"
 #include "mode_find.h"
 #include "modes.h"
@@ -88,7 +89,9 @@ typedef struct {
     EditorOptions options;
     EditorArguments arguments;
     EditorFilePermissions file_permissions;
-    const EditorSyntax *syntax; // the syntax highlighting info for the current file
+    const EditorSyntax
+        *syntax; // the syntax highlighting info for the current file
+    EditorActionHistory *action_history;
 } EditorState;
 
 extern EditorState editor_state;

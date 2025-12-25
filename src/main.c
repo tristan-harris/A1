@@ -52,6 +52,28 @@ static void editor_init(void) {
     // default permissions
     editor_state.file_permissions.can_read = true;
     editor_state.file_permissions.can_write = true;
+
+    // action history
+    editor_state.action_history = NULL;
+}
+
+static void editor_free(void) {
+    if (editor_state.rows) {
+        for (int i = 0; i < editor_state.num_rows; i++) {
+            EditorRow *row = &editor_state.rows[i];
+            if (row->chars) { free(row->chars); }
+            if (row->render) { free(row->render); }
+            if (row->highlight) { free(row->highlight); }
+        }
+        free(editor_state.rows);
+    }
+
+    if (editor_state.file_path) { free(editor_state.file_path); }
+    if (editor_state.file_name) { free(editor_state.file_name); }
+
+    if (editor_state.action_history) {
+        editor_action_history_destroy(editor_state.action_history);
+    }
 }
 
 static void handle_window_change(int sig) {
@@ -111,6 +133,7 @@ static void manage_file(char *file_path) {
 
 int main(int argc, char *argv[]) {
     editor_init();
+    atexit(editor_free);
 
     parse_arguments(&editor_state.arguments, argc, argv);
 
